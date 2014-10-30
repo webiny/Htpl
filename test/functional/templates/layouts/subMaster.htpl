@@ -1,0 +1,11 @@
+<w-block name="subtpl">
+    <div>subtpl: from subMaster</div>
+</w-block>
+
+<w-block name="content-right">
+    <div>content-right: from-subMaster</div>
+</w-block>
+
+<w-block name="content-left">
+    <div>content-left: from-subMaster</div>
+</w-block>

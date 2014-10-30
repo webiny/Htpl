@@ -1,0 +1,22 @@
+Outside Layout
+<w-layout template="layouts/2col.htpl" template-mobile="layouts/mobile/2col.htpl" template-tablet="layouts/tables/2col.html">
+    <w-block name="content-left">
+        content-left: from 2col/simple
+    </w-block>
+
+    <w-block name="content-right">
+        content-right: from 2col/simple
+    </w-block>
+
+    <w-block name="content-unmatched">
+        content-unmatched: from simple
+    </w-block>
+
+</w-layout>
+
+Outside layout two
+<w-layout template="layouts/subMaster.htpl">
+    <w-block name="content-left">
+        content-left: from subMaster/simple
+    </w-block>
+</w-layout>

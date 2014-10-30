@@ -1,0 +1,26 @@
+<!--
+Import the first level of layouts and merge the blocks accordingly
+-->
+Outside Layout
+<w-layout template="layouts/master.htpl">
+    <w-block name="content">
+
+        <div style="float:left">
+            <h1>Div left</h1>
+            content-left: from 2col/simple
+        </div>
+
+        <div style="float:left">
+            <h1>Div right</h1>
+            content-right: from 2col/simple
+        </div>
+
+        content-middle: from-2col
+
+    </w-block>
+</w-layout>
+
+Outside layout two
+    <div>subtpl: from subMaster</div>
+    <div>content-right: from-subMaster</div>
+content-left: from subMaster/simple

@@ -1,0 +1,38 @@
+<w-layout template="layouts/2col.htpl">
+    <w-block name="content-left">
+
+        <w-list items="pages" var="page">
+            <div class="post">
+                <h1>
+                    <w-var>title</w-var>
+                </h1>
+                <div>
+                    <p class="teaser">
+                        <w-var default="content" mod="wordTrim:230; case:upper">teaser</w-var>
+                    </p>
+                    <div class="meta">
+                        <span class="author"><w-var>author.name</w-var></span>
+                        <span class="date"><w-var mod="timeAgo">publisedDate</w-var></span>
+                    </div>
+                    <div class="img">
+                        <img src="default.img" w-src="image" width="400" height="250"/>
+                    </div>
+                    <w-list items="labels">
+                        <span class="label">
+                            <a href="#" w-href="label.href">label.name</a>
+                        </span>
+                    </w-list>
+                </div>
+            </div>
+        </w-list>
+
+    </w-block>
+
+    <w-block name="content-right">
+        <div>content-right: from 2col/simple</div>
+    </w-block>
+
+    <w-block name="content-unmatched">
+        <div>content-unmatched: from simple</div>
+    </w-block>
+</w-layout>

@@ -1,0 +1,23 @@
+<w-layout template="layouts/master.htpl">
+    <w-block name="content">
+
+        <div style="float:left">
+            <h1>Div left</h1>
+            <w-block name="content-left">
+                content-left: from-2col
+            </w-block>
+        </div>
+
+        <div style="float:left">
+            <h1>Div right</h1>
+            <w-block name="content-right">
+                content-right: from-2col
+            </w-block>
+        </div>
+
+        <w-block name="content-middle">
+            <div class="bla">content-middle: from-2col</div>
+        </w-block>
+
+    </w-block>
+</w-layout>
