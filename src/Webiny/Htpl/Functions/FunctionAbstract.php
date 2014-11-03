@@ -8,7 +8,17 @@ abstract class FunctionAbstract implements FunctionInterface
 {
     protected function _getVarName($name)
     {
-        return '$_htpl["' . $name . '"]';
+        if (strpos($name, '.') !== false) {
+            $nameData = explode('.', $name);
+            $name = '$_htpl';
+            foreach ($nameData as $n) {
+                $name .= '[\'' . $n . '\']';
+            }
+
+            return $name;
+        } else {
+            return '$_htpl[\'' . $name . '\']';
+        }
     }
 
     protected function _applyModifiers($var, $modifiers)
@@ -44,12 +54,32 @@ abstract class FunctionAbstract implements FunctionInterface
 
     protected function _outputVar($var)
     {
-        return "\n".'<?php echo ' . $var . ';?>'."\n";
+        return '<?php echo ' . $var . ';?>';
     }
 
     protected function _outputFunction($func)
     {
-        return "\n".'<!--<?php '.$func.' ?>-->'."\n";
+        return "\n" . '<?php ' . $func . ' ?>' . "\n";
+    }
+
+    protected function _parseProperties($string)
+    {
+        $properties = [];
+        $stringData = explode(';', $string);
+        if (count($stringData) < 1) {
+            $stringData = [$string];
+        }
+
+        foreach ($stringData as $sd) {
+            if (trim($sd) != '') {
+                $sdData = explode(':', $sd);
+                if (count($sdData) == 2) {
+                    $properties[trim($sdData[0])] = trim($sdData[1]);
+                }
+            }
+        }
+
+        return $properties;
     }
 
     private function _quotifyParameters($parameters)
@@ -70,7 +100,7 @@ abstract class FunctionAbstract implements FunctionInterface
                 if ($firstChar == '"') {
                     $parameters[] = "'" . $p . "'";
                 } else {
-                    $parameters[] = '"' . $p . '"';
+                    $parameters[] = '\'' . $p . '\'';
                 }
             }
         }

@@ -12,16 +12,27 @@ class DeviceDetection
     const DEVICE_PHONE = 'phone';
     const DEVICE_TABLET = 'tablet';
 
-    public static function isPhone()
+    public static function isMobile()
     {
         $dd = new self();
+
         return $dd->matchDevice(self::DEVICE_PHONE);
     }
 
     static public function isTablet()
     {
         $dd = new self();
+
         return $dd->matchDevice(self::DEVICE_TABLET);
+    }
+
+    static public function isDesktop()
+    {
+        if(!self::isTablet() && !self::isMobile()){
+            return true;
+        }
+
+        return false;
     }
 
     public function matchDevice($deviceTypeToMatch)
@@ -44,7 +55,7 @@ class DeviceDetection
         // load the device list and do the match based on the user agent
         $this->_loadDeviceList();
         $isMatched = false;
-        foreach (self::$devices['uaMatch'][$deviceTypeToMatch.'s'] as $phone => $pattern) {
+        foreach (self::$devices['uaMatch'][$deviceTypeToMatch . 's'] as $phone => $pattern) {
             if (preg_match('/' . preg_quote($pattern) . '/is', $ua)) {
                 $isMatched = true;
                 break;

@@ -31,18 +31,10 @@ class Selector
             $xResult = $xpath->query($query);
         }
 
-        /*if($xResult->length<1 ){
-            $doc = new \DOMDocument();
-            $doc->preserveWhiteSpace = true;
-            $doc->formatOutput = false;
-            $doc->loadXML($source, LIBXML_NOWARNING || LIBXML_NONET);
-            libxml_clear_errors();
-            $xpath = new \DOMXpath($doc);
-            $xResult = $xpath->query($query);
-        }*/
-
         $result = [];
         foreach ($xResult as $r) {
+            $entry = [];
+
             // extract blocks
             $entry['tag'] = $r->tagName;
 
@@ -98,6 +90,10 @@ class Selector
         $source = str_replace(['  ', "\n", "\t", "\r\r"], [' ', ' ', ' ', ' '], $source);
         $source = preg_replace('/\s+/', ' ',$source);
         $source = str_replace('> <', '><', $source);
+        $source = str_replace(' />', '/>', $source);
+
+        // fix for script self enclosing tag (php DOMParser does not know html5)
+        $source = str_replace('></script>', '/>', $source);
 
         $html = preg_replace('|' . $search . '|ms', "\n".$replacement."\n", $source);
 

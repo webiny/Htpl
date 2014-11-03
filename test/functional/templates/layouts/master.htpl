@@ -14,5 +14,10 @@
     <div>footer:from master</div>
 </w-block>
 
+<w-minify>
+    <script type="text/javascript" src="/js/pero.js"></script>
+    <script type="text/javascript" src="/js/djuro.min.js"></script>
+</w-minify>
+
 </body>
 </html>

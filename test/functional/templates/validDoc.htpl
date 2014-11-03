@@ -1,27 +1,40 @@
 <w-layout template="layouts/2col.htpl">
     <w-block name="content-left">
 
-        <w-list items="pages" var="page">
+        <w-list items="pages" var="page" key="pKey">
             <div class="post">
                 <h1>
-                    <w-var>title</w-var>
+                    <w-var>page.title</w-var>
                 </h1>
                 <div>
                     <p class="teaser">
-                        <w-var default="content" mod="wordTrim:230; case:upper">teaser</w-var>
+                        <w-var default="content" mod="wordTrim:230; case:upper">page.teaser</w-var>
                     </p>
                     <div class="meta">
-                        <span class="author"><w-var>author.name</w-var></span>
-                        <span class="date"><w-var mod="timeAgo">publisedDate</w-var></span>
+                        <span class="author"><w-var>page.author.name</w-var></span>
+                        <span class="date"><w-var mod="timeAgo">page.publishedDate</w-var></span>
                     </div>
-                    <div class="img">
-                        <img src="default.img" w-src="image" width="400" height="250"/>
-                    </div>
-                    <w-list items="labels">
+
+                    <w-if name="eq:'pero';" age="gte:25; lte:100" title="neq:someTitleVar">
+                        <div class="img">
+                            <w-img src="page.image.org">
+                                <default>default.img</default>
+                                <desktop style="width: 800px; height: 450px; resize: cropAndResize;" />
+                                <tablet style="width: 600px; height: 300px; resize: resize; fill: #fffff" />
+                                <mobile src="page.image.mobile" style="width: 350px; height: 200px; resize: crop; fill: #fffff" />
+                            </w-img>
+
+                            <w-img src="page.image.org" default="default.img" style="width: 800px; height: 450px; resize: cropAndResize;" />
+                        </div>
+                    </w-if>
+
+                    <w-if name="eq:pero" operator="or" label="gte:10">
+                        <w-list items="labels" var="label">
                         <span class="label">
-                            <a href="#" w-href="label.href">label.name</a>
+                            <a w-href="label.href"><w-var>label.name</w-var></a>
                         </span>
-                    </w-list>
+                        </w-list>
+                    </w-if>
                 </div>
             </div>
         </w-list>

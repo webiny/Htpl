@@ -29,6 +29,7 @@ class OutputFormatter
         $uncleanhtml_array = explode("\n", $fixed_uncleanhtml);
         //Sets no indentation
         $indentlevel = 0;
+        $insidePhpBlock = false;
         foreach ($uncleanhtml_array as $uncleanhtml_key => $currentuncleanhtml) {
             //Removes all indentation
             $currentuncleanhtml = preg_replace("/\t+/", "", $currentuncleanhtml);
@@ -44,9 +45,17 @@ class OutputFormatter
             //If self-closing tag, simply apply indent
             if (preg_match("/<(.+)\/>/", $currentuncleanhtml)) {
                 $cleanhtml_array[$uncleanhtml_key] = $replaceindent . $currentuncleanhtml;
+            }else if($insidePhpBlock && strpos($currentuncleanhtml, '?>')===false){
+                $cleanhtml_array[$uncleanhtml_key] = $replaceindent . $currentuncleanhtml;
             }else if(strpos($currentuncleanhtml, '<?')!==false){
                 // indentation for php tag
                 $cleanhtml_array[$uncleanhtml_key] = $replaceindent . $currentuncleanhtml;
+                if(!strpos($currentuncleanhtml, '?>')!==false){
+                    $insidePhpBlock = true;
+                }
+            }else if(strpos($currentuncleanhtml, '?>')!==false){
+                $cleanhtml_array[$uncleanhtml_key] = $replaceindent . $currentuncleanhtml;
+                $insidePhpBlock = false;
             }else {
                 //If doctype declaration, simply apply indent
                 if (preg_match("/<!(.*)>/", $currentuncleanhtml)) {

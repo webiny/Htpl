@@ -44,7 +44,13 @@ class WList extends FunctionAbstract
         $items = self::_getVarName($attributes['items']);
         $var = self::_getVarName($attributes['var']);
 
-        $func = 'foreach ('.$items.' as '.$var.'){ ';
+        // key attribute
+        if(isset($attributes['key']) && !empty($attributes['key'])){
+            $key = self::_getVarName($attributes['key']);
+            $func = 'foreach ('.$items.' as '.$key.' => '.$var.'){ ';
+        }else{
+            $func = 'foreach ('.$items.' as '.$var.'){ ';
+        }
 
         // insert meta ?
 

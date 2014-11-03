@@ -2,6 +2,8 @@
 
 namespace Webiny\Htpl\Processor;
 
+use Webiny\Htpl\HtplException;
+
 class Compiler
 {
     private $_template;
@@ -30,14 +32,23 @@ class Compiler
                 foreach ($matches as $m) {
                     $content = $m['content'];
                     $attributes = isset($m['attributes']) ? $m['attributes'] : [];
-
                     // extract the opening and closing tag
                     $outerContent = str_replace($m['content'], '', $m['outerHtml']);
                     $closingTag = '</' . $tag . '>';
                     $openingTag = str_replace($closingTag, '', $outerContent);
 
                     // process the function callback
-                    $result = $callback::parseTag($content, $attributes);
+                    try {
+                        $result = $callback::parseTag($content, $attributes);
+                    } catch (HtplException $e) {
+                        throw new HtplException('Htpl in unable to parse your template near: ' . $openingTag . "\n\n " . $e->getMessage(
+                            )
+                        );
+                    }
+
+                    if (!$result) {
+                        continue;
+                    }
 
                     // do the replacement
                     if (isset($result['content'])) {
@@ -45,11 +56,12 @@ class Compiler
                         $this->_template = str_replace($m['outerHtml'], $replacement, $this->_template);
                     } else {
                         $this->_template = str_replace($openingTag, $result['openingTag'], $this->_template);
-                        $this->_template = str_replace($closingTag, $result['closingTag'], $this->_template);
+                        if (isset($result['closingTag'])) {
+                            $this->_template = str_replace($closingTag, $result['closingTag'], $this->_template);
+                        }
                     }
                 }
             }
-
         }
     }
 
@@ -71,8 +83,12 @@ class Compiler
     private function _getFunctions()
     {
         return [
-            'w-list' => 'Webiny\Htpl\Functions\WList',
-            'w-var'  => 'Webiny\Htpl\Functions\WVar',
+            'w-minify' => 'Webiny\Htpl\Functions\WMinify',
+            'w-img'    => 'Webiny\Htpl\Functions\WImage',
+            'a'        => 'Webiny\Htpl\Functions\WAnchor',
+            'w-if'     => 'Webiny\Htpl\Functions\WIf',
+            'w-list'   => 'Webiny\Htpl\Functions\WList',
+            'w-var'    => 'Webiny\Htpl\Functions\WVar'
         ];
     }
 }

@@ -2,7 +2,9 @@
 
 namespace Webiny\Htpl\Functions;
 
-class WVar extends FunctionAbstract
+use Webiny\Htpl\HtplException;
+
+class WAnchor extends FunctionAbstract
 {
 
     /**
@@ -12,7 +14,7 @@ class WVar extends FunctionAbstract
      */
     public static function getTag()
     {
-        return 'w-var';
+        return 'a';
     }
 
     /**
@@ -30,32 +32,20 @@ class WVar extends FunctionAbstract
     public static function parseTag($content, $attributes)
     {
         // content
-        if (empty($content)) {
-            throw new HtplException('w-var content cannot be empty.');
+        if (!isset($attributes['w-href'])) {
+            return false;
         }
 
-        // the content matches the internal variable
-        $var = self::_getVarName($content);
-
-        if (is_array($attributes)) {
-            // default attribute
-            if (isset($attributes['default'])) {
-                $var = '(!empty(' . $var . ') ? ' . $var . ' : \'' . $attributes['default'] . '\')';
+        $tag = '<a href="' . self::_outputVar(self::_getVarName($attributes['w-href'])) . '"';
+        foreach ($attributes as $aName => $aVal) {
+            if ($aName != 'href' && $aName != 'w-href') {
+                $tag.=' '.$aName.'= "'.$aVal.'"';
             }
         }
-
-        // apply modifiers
-        if (isset($attributes['mod'])) {
-            $var = self::_applyModifiers($var, $attributes['mod']);
-        }
-
-        // wrap for output
-        $var = self::_outputVar($var);
+        $tag.='>';
 
         return [
-            'openingTag' => '',
-            'content'    => $var,
-            'closingTag' => ''
+            'openingTag' => $tag
         ];
     }
 }
