@@ -24,7 +24,7 @@ class WMinify extends FunctionAbstract
      * The method should return a string that should replace the matching tag.
      * If the method returns false, no replacement will occur.
      *
-     * @param string $content
+     * @param string     $content
      * @param array|null $attributes
      *
      * @throws HtplException
@@ -37,30 +37,14 @@ class WMinify extends FunctionAbstract
             throw new HtplException('w-minify content cannot be empty.');
         }
 
-        /*if (!isset($attributes['type'])) {
-            throw new HtplException('w-minify "type" attribute must be set.');
-        }
-
-        if ($attributes['type'] != 'javascript' && $attributes['type'] != 'css') {
-            throw new HtplException('w-minify invalid "type" value "' . $attributes['type'] . '".');
-        }
-
-        if ($attributes['type'] == 'javascript') {
-            $output = self::_parseJavascript($content);
-        } else {
-            if ($attributes['type'] == 'css') {
-                $output = self::_parseCss($content);
-            }
-        }*/
-
         // check if it's javascript
         $items = Selector::select($content, '//script');
-        if ($items > 0) {
+        if (count($items) > 0) {
             $output = self::_parseJavascript($items);
         } else {
             $items = Selector::select($content, '//link');
-            if ($items > 0) {
-                //$output = self::_parseCss($items);
+            if (count($items) > 0) {
+                $output = self::_parseCss($items);
             }
         }
 
@@ -84,31 +68,8 @@ class WMinify extends FunctionAbstract
                 ) != 'min.js' && (!isset($i['attributes']['minify']) || $i['attributes']['minify'] != 'false')
             ) {
                 // @todo enable a way for others to do their own custom minify function
-                // very simple minify function
-                // reference http://codewiz.biz/article/post/minify+and+combining+of+css+and+js
-                $lines = explode("\n", $content);
-                $lines = array_map(function ($line) {
-                        return preg_replace("@\s*//.*$@", '', $line);
-                    }, $lines
-                );
-                $content = implode("\n", $lines);
-                // remove tabs, spaces, newlines, etc.
-                $content = str_replace([
-                                           "\r\n",
-                                           "\r",
-                                           "\n",
-                                           "\t",
-                                           "  ",
-                                           "    ",
-                                           "     "
-                                       ], "", $content
-                );
-                // remove other spaces before/after )
-                $content = preg_replace([
-                                            '(( )+\))',
-                                            '(\)( )+)'
-                                        ], ')', $content
-                );
+                $content = self::_minifyString($content);
+
             }
             $minifiedFileContent .= "\n" . $content;
         }
@@ -118,11 +79,55 @@ class WMinify extends FunctionAbstract
         // write the file
         self::_writeMinifiedFile($minifiedFileName, $minifiedFileContent);
 
-        return '<script type="text/javascript" src="/minified/'.$minifiedFileName.'"></script>';
+        return '<script type="text/javascript" src="/minified/' . $minifiedFileName . '"></script>';
 
         // @todo how to check the object freshness
+    }
 
+    private static function _parseCss($items)
+    {
+        $minifiedFileContent = '';
+        $files = [];
+        // agregate and parse the files
+        foreach ($items as $i) {
+            $files[] = $i['attributes']['href'];
+            $content = self::_getFileContent($i['attributes']['href']);
 
+            if (substr($i['attributes']['href'], -7
+                ) != 'min.css' && (!isset($i['attributes']['minify']) || $i['attributes']['minify'] != 'false')
+            ) {
+                // @todo enable a way for others to do their own custom minify function
+                //$content = self::_minifyString($content);
+            }
+
+            // sort out the relative paths
+            preg_match_all('/url\((.*?)\)/', $content, $matches);
+            if (count($matches[0]) > 0) {
+                // clean out the quotes
+                $mIndex = 0;
+                foreach($matches[0] as $m){
+                    $path = str_replace(['"', "'"], '', $matches[1][$mIndex]);
+                    // convert the path
+                    $path = self::_relativeUrltoAbsolute($path, $i['attributes']['href']);
+
+                    // replace all the paths inside the content
+                    $content = str_replace($m, 'url("'.$path.'")', $content);
+
+                    $mIndex++;
+                }
+            }
+
+            $minifiedFileContent .= "\n" . $content;
+        }
+
+        $minifiedFileName = 'htpl.' . md5(implode('', $files)) . '.min.js';
+
+        // write the file
+        self::_writeMinifiedFile($minifiedFileName, $minifiedFileContent);
+
+        return '<link rel="stylesheet" href="/minified/' . $minifiedFileName . '"></link>';
+
+        // @todo how to check the object freshness
     }
 
     private static function _getFileContent($file)
@@ -130,13 +135,73 @@ class WMinify extends FunctionAbstract
         return file_get_contents(Htpl::getTemplateDir() . $file);
     }
 
+    private static function _relativeUrltoAbsolute($rel, $base)
+    {
+        // $base = /css/minify.css
+        // $rel = ../img/dark_wall.png
+        // $result = http://localhost/img/dark_wall.png
+
+        // extract the base path without the filename
+        $base = dirname($base);
+
+        // get host
+        //$host = $_SERVER['HOST_NAME'];
+
+        // combine relative path and the base path
+        $path = rtrim($base, '/').'/'.ltrim($rel, '/');
+
+        $filename = str_replace('//', '/', $path);
+        $parts = explode('/', $filename);
+        $out = array();
+        foreach ($parts as $part){
+            if ($part == '.') continue;
+            if ($part == '..') {
+                array_pop($out);
+                continue;
+            }
+            $out[] = $part;
+        }
+
+        return implode('/', $out);
+    }
+
+    private static function _minifyString($string)
+    {
+        // reference http://codewiz.biz/article/post/minify+and+combining+of+css+and+js
+        $lines = explode("\n", $string);
+        $lines = array_map(function ($line) {
+                return preg_replace("@\s*//.*$@", '', $line);
+            }, $lines
+        );
+        $content = implode("\n", $lines);
+        // remove tabs, spaces, newlines, etc.
+        $content = str_replace([
+                                   "\r\n",
+                                   "\r",
+                                   "\n",
+                                   "\t",
+                                   "  ",
+                                   "    ",
+                                   "     "
+                               ], "", $content
+        );
+        // remove other spaces before/after )
+        $content = preg_replace([
+                                    '(( )+\))',
+                                    '(\)( )+)'
+                                ], ')', $content
+        );
+
+        return $content;
+    }
+
     private static function _writeMinifiedFile($filename, &$content)
     {
-        $dir = Htpl::getTemplateDir().'minified/'; // @todo this should be a configurable path?
-        if(!is_dir($dir)){
+        $dir = Htpl::getTemplateDir() . 'minified/'; // @todo this should be a configurable path
+        if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
-        return file_put_contents($dir.$filename, $content);
+        return file_put_contents($dir . $filename, $content);
     }
 }

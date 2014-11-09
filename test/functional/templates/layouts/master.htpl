@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>This is the master</title>
+
+    <w-minify>
+        <link rel="stylesheet" href="/css/main.css"/>
+    </w-minify>
 </head>
 <body>
 
