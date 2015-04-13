@@ -5,103 +5,114 @@ namespace Webiny\Htpl\Processor;
 class Selector
 {
 
-    function select($source, $query)
+    public static function select($source, $query)
     {
         // disable libxml errors because it doesn't support html5 tags
         libxml_use_internal_errors(true);
 
-        // first we need to extract all the layouts and blocks
         $doc = new \DOMDocument();
         $doc->preserveWhiteSpace = true;
-        $doc->formatOutput = false;
+        $doc->formatOutput = true;
         $doc->substituteEntities = false;
-        // loadHtml messes up the format
-        // loadXml messes up when we have a doc-tag in the html
-        $doc->loadXml($source, LIBXML_NOWARNING || LIBXML_NONET);
+        $doc->loadHtml($source);
         libxml_clear_errors();
+
         $xpath = new \DOMXpath($doc);
         $xResult = $xpath->query($query);
-        if($xResult->length<1){
-            $doc->loadHTML($source, LIBXML_NOWARNING || LIBXML_NONET);
-            $doc->preserveWhiteSpace = true;
-            $doc->formatOutput = false;
-            $doc->substituteEntities = false;
-            libxml_clear_errors();
-            $xpath = new \DOMXpath($doc);
-            $xResult = $xpath->query($query);
-        }
 
         $result = [];
         foreach ($xResult as $r) {
             $entry = [];
-
             // extract blocks
             $entry['tag'] = $r->tagName;
-
             $innerHtml = '';
             $children = $r->childNodes;
             foreach ($children as $child) {
-                $innerHtml .= $child->ownerDocument->saveXml($child);
+                $innerHtml .= urldecode($child->ownerDocument->saveHtml($child));
             }
             $entry['content'] = $innerHtml;
-
             $xAttributes = $r->attributes;
             foreach ($xAttributes as $a) {
                 $entry['attributes'][$a->name] = $a->value;
             }
-
-
-            $entry['outerHtml'] = $r->ownerDocument->saveXml($r);
+            $entry['outerHtml'] = urldecode($r->ownerDocument->saveHtml($r));
             $result[] = $entry;
         }
 
         return $result;
     }
 
-    function replace($source, $query, $replacement)
+    public static function replace($source, $query, $replacement)
     {
-        // disable libxml errors because it doesn't support html5 tags
-        /*libxml_use_internal_errors(true);
+        $source = Selector::prepare($source);
 
-        $doc = new \DOMDocument();
-        $doc->preserveWhiteSpace = true;
-        $doc->formatOutput = false;
-        $doc->loadHTML($source, LIBXML_NOWARNING || LIBXML_NONET);
-        libxml_clear_errors();
-
-        $xpath = new \DOMXpath($doc);
-        $results = $xpath->query($query);
-        $item = $results->item(0);*/
-
-        $result = self::select($source, $query);
-
-        /*if ($query == "//w-layout[@template='layouts/2col.htpl']") {
-            die(print_r($result[0]['outerHtml']));
-        }*/
-
-        if (!isset($result[0])) {
+        $results = self::select($source, $query);
+        if (count($results) < 1) {
             return $source;
         }
 
-        $replacement = str_replace(['  ', "\n", "\t"], [' ', ' ', ' '], $replacement);
-        $search = str_replace(['  ', "\n", "\t", "\r\r"], [' ', ' ', ' ', ' '], $result[0]['outerHtml']);
-        $search = preg_replace('/\s+/', ' ',$search);
-        $search = str_replace('> <', '><', $search);
-        $source = str_replace(['  ', "\n", "\t", "\r\r"], [' ', ' ', ' ', ' '], $source);
-        $source = preg_replace('/\s+/', ' ',$source);
-        $source = str_replace('> <', '><', $source);
-        $source = str_replace(' />', '/>', $source);
-
-        // fix for script self enclosing tag (php DOMParser does not know html5)
-        $source = str_replace('></script>', '/>', $source);
-
-        $html = preg_replace('|' . $search . '|ms', "\n".$replacement."\n", $source);
-
-        if ($query == "//w-layout[@template='layouts/2col.htpl']") {
-            //die($html);
+        foreach ($results as $r) {
+            $source = str_replace($r['outerHtml'], $replacement, $source);
         }
 
-        return $html;
+        return $source;
+    }
 
+    public static function prepare($tpl)
+    {
+        libxml_use_internal_errors(true);
+
+        $tplDoc = new \DOMDocument();
+        $tplDoc->preserveWhiteSpace = true;
+        $tplDoc->formatOutput = true;
+        $tplDoc->substituteEntities = true;
+
+        // filter out things that can break loadHtml
+        $tpl = str_replace(['<head>', '</head>'], ['head-start', 'head-end'], $tpl);
+        $tpl = str_replace(['<body>', '</body>'], ['body-start', 'body-end'], $tpl);
+        $tpl = str_replace(['<html>', '</html>'], ['html-start', 'html-end'], $tpl);
+
+        $tplDoc->loadHtml('<w-fragment>' . $tpl . '</w-fragment>');
+
+        // extract the content from the fragment
+        $xpath = new \DOMXpath($tplDoc);
+        $xResult = $xpath->query('//w-fragment');
+        foreach ($xResult as $r) {
+            $children = $r->childNodes;
+            $tpl = '';
+            foreach ($children as $child) {
+                $tpl .= urldecode($child->ownerDocument->saveHtml($child));
+            }
+        }
+
+        // replace back the components
+        $tpl = str_replace(['head-start', 'head-end'], ['<head>', '</head>'], $tpl);
+        $tpl = str_replace(['body-start', 'body-end'], ['<body>', '</body>'], $tpl);
+        $tpl = str_replace(['html-start', 'html-end'], ['<html>', '</html>'], $tpl);
+
+        return $tpl;
+    }
+
+    public static function outputCleanup($tpl)
+    {
+        $tpl = html_entity_decode($tpl);
+
+        // some tags that we need to correct
+        $tags = [
+            '></link>' => '/>'
+        ];
+        $tpl = str_replace(array_keys($tags), array_values($tags), $tpl);
+
+        // check if we the starting html tag
+        if (stripos($tpl, '<html') !== true) {
+            $tpl = '<html>' . "\n" . $tpl;
+        }
+
+        // check if we have the html definition
+        if (stripos($tpl, '<!doctype') !== true) {
+            $tpl = '<!doctype html>' . "\n" . $tpl;
+        }
+
+        return $tpl;
     }
 }

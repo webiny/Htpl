@@ -1,6 +1,8 @@
 <?php
 namespace Webiny\Htpl\Functions;
 
+use Webiny\Htpl\Htpl;
+
 interface FunctionInterface
 {
     /**
@@ -8,7 +10,7 @@ interface FunctionInterface
      *
      * @return string
      */
-    public static function getTag();
+    public function getTag();
 
     /**
      * This is a callback method when we match the tag that the function is registered for.
@@ -16,10 +18,11 @@ interface FunctionInterface
      * The method should return a string that should replace the matching tag.
      * If the method returns false, no replacement will occur.
      *
-     * @param string $content
+     * @param string     $content
      * @param array|null $attributes
+     * @param Htpl       $htpl
      *
-     * @return string|bool
+     * @return array|bool
      */
-    public static function parseTag($content, $attributes);
+    public function parseTag($content, $attributes, Htpl $htpl);
 }

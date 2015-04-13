@@ -2,17 +2,18 @@
 
 namespace Webiny\Htpl\Functions;
 
+use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
+use Webiny\Htpl\Processor\OutputWrapper;
 
-class WIf extends FunctionAbstract
+class WIf implements FunctionInterface
 {
-
     /**
      * Return the html tag that the function is attached to.
      *
      * @return string
      */
-    public static function getTag()
+    public function getTag()
     {
         return 'w-if';
     }
@@ -25,110 +26,62 @@ class WIf extends FunctionAbstract
      *
      * @param string     $content
      * @param array|null $attributes
+     * @param Htpl       $htpl
      *
      * @throws HtplException
      * @return string|bool
      */
-    public static function parseTag($content, $attributes)
+    public function parseTag($content, $attributes, Htpl $htpl)
     {
         // content
-        if (empty($attributes)) {
+        if (empty($attributes) || empty($attributes['cond']) || trim($attributes['cond']) == '') {
             throw new HtplException('w-if must have a logical condition.');
         }
 
-        $conditionGroups = self::_extractConditions($attributes);
-       // die(print_r($conditionGroups));
-        $conditions = '';
-        foreach ($conditionGroups as $cg) {
-            if($cg[0]=='or'){
-                $conditions = substr($conditions, 0, -4).' || ';
-            }else{
-                $conditions .= '(' . implode(' && ', $cg) . ') && ';
-            }
-        }
-        $openingTag = 'if (' . substr($conditions, 0, -4) . ') {';
+        $conditions = $this->parseConditions($attributes['cond']);
+        $openingTag = 'if (' . $conditions . ') {';
 
         return [
-            'openingTag' => self::_outputFunction($openingTag),
-            'closingTag' => self::_outputFunction('}')
+            'openingTag' => OutputWrapper::outputFunction($openingTag),
+            'closingTag' => OutputWrapper::outputFunction('}')
         ];
     }
 
-    private static function _extractConditions($conditions)
+    private function parseConditions($conditions)
     {
-        $conditionGroups = [];
-        foreach ($conditions as $var => $c) {
-            $innerConditions = explode(';', $c);
-            if (count($innerConditions) < 1) {
-                $innerConditions = [$c];
+        // extract the strings
+        preg_match_all('/([\'])([A-z][A-z\.0-9]+)\1/', $conditions, $matches, PREG_OFFSET_CAPTURE);
+
+
+        $vars = [];
+        if (count($matches[0]) > 0) {
+            $countOffset = 0;
+            foreach ($matches[0] as $m) {
+                $varName = 'htpl_' . uniqid();
+                $conditions = substr_replace($conditions, $varName, $m[1] + $countOffset, strlen($m[0]));
+                $countOffset += strlen($varName) - strlen($m[0]);
+                $vars[$varName] = $m[0];
             }
+        }
 
-            if ($c == 'or' && $var == 'operator') {
-                $conditionGroups[] = ['or'];
-                continue;
-            }
+        // extract the variables
+        preg_match_all('/([A-z][\w\.]+)/', $conditions, $matches, PREG_OFFSET_CAPTURE);
 
-            $conditionList = [];
-            foreach ($innerConditions as $i) {
-                if ($i != '') {
-                    $iData = explode(':', $i);
-                    // term
-                    $term = self::_getOperand(trim($iData[0]));
-                    if (!$term) {
-                        throw new HtplException('w-if encountered an unknown operand "' . $iData[0] . '".');
-                    }
-                    // term value
-                    if (is_numeric($iData[1])) {
-                        $termValue = $iData[1];
-                    } else {
-                        if (strpos(trim($iData[1]), '"') === 0 || strpos(trim($iData[1]), "'") === 0) {
-                            $termValue = $iData[1];
-                        } else {
-                            $termValue = self::_getVarName($iData[1]);
-                        }
-                    }
-
-                    $conditionList[] = self::_getVarName($var) . $term . $termValue;
+        if (count($matches[0]) > 0) {
+            $countOffset = 0;
+            foreach ($matches[0] as $m) {
+                if (isset($vars[$m[0]])) {
+                    $var = $vars[$m[0]];
+                } else {
+                    $var = OutputWrapper::getVar($m[0]);
                 }
+
+                $conditions = substr_replace($conditions, $var, $m[1] + $countOffset, strlen($m[0]));
+
+                $countOffset += strlen($var) - strlen($m[0]);
             }
-            $conditionGroups[] = $conditionList;
         }
 
-        return $conditionGroups;
-    }
-
-    private static function _getOperand($operandName)
-    {
-        switch ($operandName) {
-            case 'eq':
-                return '==';
-                break;
-            case 'neq':
-                return '!=';
-                break;
-            case 'gt':
-                return '>';
-                break;
-            case 'gte':
-                return '>=';
-                break;
-            case 'lt':
-                return '<';
-                break;
-            case 'lte':
-                return '<=';
-                break;
-            case 'in':
-                return 'in_array($var, $value)';
-                break;
-            case 'nin':
-                return '!in_array($var, $value)';
-                break;
-            default:
-                return false;
-                break;
-
-        }
-
+        return $conditions;
     }
 }

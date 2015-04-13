@@ -2,48 +2,106 @@
 
 namespace Webiny\Htpl\Processor;
 
+use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 
 class Compiler
 {
     private $_template;
 
-    function _construct($template)
-    {
-        // before we can do the template compile, we need to solve the template inheritance
-        $layoutTree = new LayoutTree($template);
-        $this->_template = $layoutTree->getLayout();
-        $this->compile();
+    /**
+     * @var Htpl
+     */
+    private $htpl;
 
-        // not format the html
-        $formatter = new OutputFormatter();
-        $template = $formatter->clean_html_code($this->_template);
-        die($template);
+    public function __construct(Htpl $htpl)
+    {
+        $this->htpl = $htpl;
     }
 
-    function compile()
+    public function getCompiledTemplate($templateName)
     {
-        // get a list of possible functions (tags) that we support
-        $functions = $this->_getFunctions();
+        //@TODO: test cache HIT case
 
+        // first, let's try to get it from cache
+        $cachedTemplate = $this->getFromCache($templateName);
+        if ($cachedTemplate) {
+            return $cachedTemplate;
+        }
+
+        // do the compile
+        $template = $this->compileTemplate($templateName);
+
+        // cache the result
+        $compiledTemplatePath = $this->htpl->getWriter()->write(md5($templateName).'.php', $template);
+
+        // create Template instance
+        $template = new Template($this->htpl, $compiledTemplatePath);
+
+        return $template;
+    }
+
+    private function getFromCache($templateName)
+    {
+        if ($this->htpl->getForceCompile()) {
+            return false;
+        }
+
+        // try to get it from cache
+        $cachedTemplate = $this->htpl->getWriter()->read($templateName);
+        if (!$cachedTemplate) {
+            return false;
+        }
+
+        // verify if cache is still fresh
+        $templateModTime = $this->htpl->getLoader()->getFreshness($templateName);
+
+        // cache creation/mod time
+        $cacheModTime = $this->htpl->getWriter()->createdOn($templateName);
+
+        if ($cacheModTime >= $templateModTime) {
+            return $cachedTemplate;
+        }
+
+        $this->htpl->getWriter()->delete($templateName);
+
+        return false;
+    }
+
+    private function compileTemplate($templateName)
+    {
+        // before we can do the template compile, we need to solve the template inheritance
+        $template = LayoutTree::getLayout($this->htpl->getLoader(), $templateName);
+
+        // now parse the variables
+        $template = VarParser::parseTemplate($template, $this->htpl);
+
+        // get a list of possible functions (tags) that we support
+        $functions = $this->htpl->getFunctions();
+
+        // parse functions
         foreach ($functions as $tag => $callback) {
-            $matches = Selector::select($this->_template, '//' . $tag);
+            $matches = Selector::select($template, '//' . $tag);
             if (count($matches) > 0) {
                 foreach ($matches as $m) {
-                    $content = $m['content'];
-                    $attributes = isset($m['attributes']) ? $m['attributes'] : [];
+
+                    // do a fresh match, since some of the tags (eg. w-list) can modify the attributes
+                    $currentMatch = Selector::select($template, '(//' . $tag . ')[1]')[0];
+
+                    $content = $currentMatch['content'];
+                    $attributes = isset($currentMatch['attributes']) ? $currentMatch['attributes'] : [];
+
                     // extract the opening and closing tag
-                    $outerContent = str_replace($m['content'], '', $m['outerHtml']);
+                    $outerContent = str_replace($currentMatch['content'], '', $currentMatch['outerHtml']);
                     $closingTag = '</' . $tag . '>';
                     $openingTag = str_replace($closingTag, '', $outerContent);
 
                     // process the function callback
                     try {
-                        $result = $callback::parseTag($content, $attributes);
+                        $instance = new $callback;
+                        $result = $instance->parseTag($content, $attributes, $this->htpl);
                     } catch (HtplException $e) {
-                        throw new HtplException('Htpl in unable to parse your template near: ' . $openingTag . "\n\n " . $e->getMessage(
-                            )
-                        );
+                        throw new HtplException('Htpl in unable to parse your template near: ' . $openingTag . "\n\n " . $e->getMessage());
                     }
 
                     if (!$result) {
@@ -53,42 +111,19 @@ class Compiler
                     // do the replacement
                     if (isset($result['content'])) {
                         $replacement = $result['openingTag'] . $result['content'] . $result['closingTag'];
-                        $this->_template = str_replace($m['outerHtml'], $replacement, $this->_template);
+                        // we replace with offset 1 cause, we always do the replacement on the current template instance
+                        $template = Selector::replace($template, '(//' . $tag . ')[1]', $replacement);
                     } else {
-                        $this->_template = str_replace($openingTag, $result['openingTag'], $this->_template);
+                        $template = str_replace($openingTag, $result['openingTag'], $template);
                         if (isset($result['closingTag'])) {
-                            $this->_template = str_replace($closingTag, $result['closingTag'], $this->_template);
+                            $template = str_replace($closingTag, $result['closingTag'], $template);
                         }
                     }
                 }
             }
         }
-    }
 
-    private function _parseAttributes($str)
-    {
-        preg_match_all('|(.*?)\="(.*?)"|', $str, $matches);
-        $attributes = [];
-        if (count($matches[0]) > 0) {
-            $mIndex = 0;
-            foreach ($matches[1] as $m) {
-                $attributes[trim($m)] = trim($matches[2][$mIndex]);
-                $mIndex++;
-            }
-        }
-
-        return $attributes;
-    }
-
-    private function _getFunctions()
-    {
-        return [
-            'w-minify' => 'Webiny\Htpl\Functions\WMinify',
-            'w-img'    => 'Webiny\Htpl\Functions\WImage',
-            'a'        => 'Webiny\Htpl\Functions\WAnchor',
-            'w-if'     => 'Webiny\Htpl\Functions\WIf',
-            'w-list'   => 'Webiny\Htpl\Functions\WList',
-            'w-var'    => 'Webiny\Htpl\Functions\WVar'
-        ];
+        // tidy the output
+        return Selector::outputCleanup($template);
     }
 }

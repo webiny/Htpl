@@ -2,9 +2,12 @@
 
 namespace Webiny\Htpl\Functions;
 
+use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
+use Webiny\Htpl\Processor\OutputWrapper;
+use Webiny\Htpl\Processor\Selector;
 
-class WList extends FunctionAbstract
+class WList implements FunctionInterface
 {
 
     /**
@@ -12,7 +15,7 @@ class WList extends FunctionAbstract
      *
      * @return string
      */
-    public static function getTag()
+    public function getTag()
     {
         return 'w-list';
     }
@@ -25,38 +28,86 @@ class WList extends FunctionAbstract
      *
      * @param string     $content
      * @param array|null $attributes
+     * @param Htpl       $htpl
      *
      * @throws HtplException
      * @return string|bool
      */
-    public static function parseTag($content, $attributes)
+    public function parseTag($content, $attributes, Htpl $htpl)
     {
         // items attributes
-        if(!isset($attributes['items']) || empty($attributes['items'])){
-            throw new HtplException('w-list function requires `items` attribute to be defined.');
+        if (!isset($attributes['items']) || empty($attributes['items'])) {
+            throw new HtplException($this->getTag() . ' function requires `items` attribute to be defined.');
         }
 
         // item attribute
-        if(!isset($attributes['var']) || empty($attributes['var'])){
-            throw new HtplException('w-list function requires `var` attribute to be defined.');
+        if (!isset($attributes['var']) || empty($attributes['var'])) {
+            throw new HtplException($this->getTag() . ' function requires `var` attribute to be defined.');
         }
 
-        $items = self::_getVarName($attributes['items']);
-        $var = self::_getVarName($attributes['var']);
+        $currentContext = isset($attributes['context']) ? $attributes['context'] : null;
+        if (is_null($currentContext)) {
+            $items = OutputWrapper::getVar($attributes['items']);
+        } else {
+            $items = OutputWrapper::getVar($attributes['items'], false); //stao
+        }
 
         // key attribute
-        if(isset($attributes['key']) && !empty($attributes['key'])){
-            $key = self::_getVarName($attributes['key']);
-            $func = 'foreach ('.$items.' as '.$key.' => '.$var.'){ ';
-        }else{
-            $func = 'foreach ('.$items.' as '.$var.'){ ';
+        $var = '$' . $attributes['var'];
+        $key = null;
+        if (isset($attributes['key']) && !empty($attributes['key'])) {
+            $key = '$' . $attributes['key'];
+            $func = 'foreach (' . $items . ' as ' . $key . ' => ' . $var . '){ ';
+        } else {
+            $func = 'foreach (' . $items . ' as ' . $var . '){ ';
         }
 
-        // insert meta ?
+        // set the context
+        $content = $this->updateContext($content, $var, $key);
 
         return [
-            'openingTag' => self::_outputFunction($func),
-            'closingTag' => self::_outputFunction('}')
+            'openingTag' => OutputWrapper::outputFunction($func),
+            'content'    => $content,
+            'closingTag' => OutputWrapper::outputFunction('}')
         ];
+    }
+
+    private function updateContext($content, $newContext, $newKeyContext = null)
+    {
+        $content = html_entity_decode($content);
+
+        #preg_match_all('/\$this->getVar\(\$this->vars\[\'([\w]+)\'\]([\S\s]+)\)/', $content, $matches);
+        preg_match_all('/\$this->getVar\(\$this->vars\[\'([\w]+)\'\]/', $content, $matches);
+        if (count($matches[1]) < 1) {
+            return $content;
+        }
+
+        // update context on variables
+        $newContext = str_replace('$', '', $newContext);
+        $newKeyContext = str_replace('$', '', $newKeyContext);
+        foreach ($matches[1] as $m) {
+            if ($m == $newContext) {
+                $content = str_replace('$this->getVar($this->vars[\'' . $m . '\']', '$this->getVar($' . $newContext,
+                    $content);
+            } elseif (!is_null($newKeyContext) && $m == $newKeyContext) {
+                $content = str_replace('$this->getVar($this->vars[\'' . $m . '\']', '$this->getVar($' . $newKeyContext,
+                    $content);
+            }
+        }
+
+        // update context on nested loops
+        $lists = Selector::select($content, '//' . $this->getTag());
+        if (count($lists) > 0) {
+            foreach ($lists as $l) {
+                if (strpos($l['attributes']['items'], $newContext) === 0) {
+                    // append the context attribute
+                    $itemsAttr = 'items="' . $l['attributes']['items'] . '"';
+                    $contextAttr = ' context="' . $newContext . '"';
+                    $content = str_replace($itemsAttr, $itemsAttr . $contextAttr, $content);
+                }
+            }
+        }
+
+        return $content;
     }
 }

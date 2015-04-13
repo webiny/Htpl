@@ -2,57 +2,64 @@
 
 namespace Webiny\Htpl\Processor;
 
+use Webiny\Htpl\Loaders\LoaderInterface;
+
 class LayoutTree
 {
-    private $_layout;
-
-    function __construct($template)
+    public static function getLayout(LoaderInterface $loader, $templateName)
     {
-        $this->_layout = self::processLayouts($template);
+        $layoutTree = new self;
+        return $layoutTree->processLayouts($loader, $templateName);
     }
 
-    function getLayout()
+    private function processLayouts(LoaderInterface $loader, $templateName)
     {
-        return $this->_layout;
-    }
-
-    static function processLayouts($template)
-    {
-        $source = TemplateLoader::getSource($template);
+        // prepare the main template
+        $source = $loader->getSource($templateName);
+        $source = Selector::prepare($source);
         $layouts = Selector::select($source, '//w-layout');
         foreach ($layouts as $l) {
-            $parentSource = TemplateLoader::getSource($l['attributes']['template']);
-            $layoutSource = self::joinLayouts($l['content'], $parentSource, 0);
-            $source = Selector::replace($source, "//w-layout[@template='" . $l['attributes']['template'] . "']", $layoutSource);
+            // get and prepare the parent
+            $parentSource = $loader->getSource($l['attributes']['template']);
+            $parentSource = Selector::prepare($parentSource);
+
+            $layoutSource = $this->joinLayouts($loader, $l['content'], $parentSource, 0);
+            $source = Selector::replace($source, "//w-layout[@template='" . $l['attributes']['template'] . "']",
+                $layoutSource . "\n");
         }
 
         // cleanup the remaining blocks
         $blocks = Selector::select($source, '//w-block');
-        foreach($blocks as $b){
-            $source = Selector::replace($source, "//w-block[@name='" . $b['attributes']['name'] . "']", $b['content']);
+        foreach ($blocks as $b) {
+            $source = Selector::replace($source, "//w-block[@name='" . $b['attributes']['name'] . "']",
+                $b['content'] . "\n");
         }
 
         return $source;
     }
 
-    static function joinLayouts($childSource, $parentSource, $i)
+    private function joinLayouts(LoaderInterface $loader, $childSource, $parentSource, $i)
     {
         // take the blocks from child
         $childBlocks = Selector::select($childSource, '//w-block');
 
         // replace the matching blocks
         foreach ($childBlocks as $cb) {
-            $parentSource = Selector::replace($parentSource, "//w-block[@name='" . $cb['attributes']['name'] . "']", $cb['content']);
+            $parentSource = Selector::replace($parentSource, "//w-block[@name='" . $cb['attributes']['name'] . "']",
+                $cb['content'] . "\n");
         }
 
         // get the parent layout and repeat the process
         $source = $parentSource;
         $layouts = Selector::select($source, '//w-layout');
-        if(count($layouts)>0){
+        if (count($layouts) > 0) {
             foreach ($layouts as $l) {
-                $parentSource = TemplateLoader::getSource($l['attributes']['template']);
-                $layoutSource = self::joinLayouts($l['content'], $parentSource, 1);
-                $source = Selector::replace($source, "//w-layout[@template='" . $l['attributes']['template'] . "']", $layoutSource);
+                $parentSource = $loader->getSource($l['attributes']['template']);
+                $parentSource = Selector::prepare($parentSource);
+
+                $layoutSource = $this->joinLayouts($loader, $l['content'], $parentSource, 1);
+                $source = Selector::replace($source, "//w-layout[@template='" . $l['attributes']['template'] . "']",
+                    $layoutSource . "\n");
             }
         }
 
