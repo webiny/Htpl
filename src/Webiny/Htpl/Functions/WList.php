@@ -49,7 +49,7 @@ class WList implements FunctionInterface
         if (is_null($currentContext)) {
             $items = OutputWrapper::getVar($attributes['items']);
         } else {
-            $items = OutputWrapper::getVar($attributes['items'], false); //stao
+            $items = OutputWrapper::getVar($attributes['items'], $currentContext, true);
         }
 
         // key attribute
@@ -76,22 +76,28 @@ class WList implements FunctionInterface
     {
         $content = html_entity_decode($content);
 
-        #preg_match_all('/\$this->getVar\(\$this->vars\[\'([\w]+)\'\]([\S\s]+)\)/', $content, $matches);
-        preg_match_all('/\$this->getVar\(\$this->vars\[\'([\w]+)\'\]/', $content, $matches);
-        if (count($matches[1]) < 1) {
-            return $content;
-        }
-
-        // update context on variables
         $newContext = str_replace('$', '', $newContext);
-        $newKeyContext = str_replace('$', '', $newKeyContext);
-        foreach ($matches[1] as $m) {
-            if ($m == $newContext) {
-                $content = str_replace('$this->getVar($this->vars[\'' . $m . '\']', '$this->getVar($' . $newContext,
-                    $content);
-            } elseif (!is_null($newKeyContext) && $m == $newKeyContext) {
-                $content = str_replace('$this->getVar($this->vars[\'' . $m . '\']', '$this->getVar($' . $newKeyContext,
-                    $content);
+        $contexts = [$newContext];
+        if (!empty($newKeyContext)) {
+            $contexts[] = str_replace('$', '', $newKeyContext);
+        }
+        foreach ($contexts as $context) {
+            // update the context when accessing object properties
+            preg_match_all('/\$this->getVar\((\'|")' . $context . '\.([\w]+)(\1), (\$this->vars)\)/', $content,
+                $matches);
+
+            if (count($matches[0]) > 0) {
+                foreach ($matches[0] as $mk => $mv) {
+                    $content = str_replace($mv, OutputWrapper::getVar($matches[2][$mk], '$' . $context), $content);
+                }
+            }
+
+            // update context on direct property access
+            preg_match_all('/\$this->getVar\((\'|")' . $context . '(\1), (\$this->vars)\)/', $content, $matches);
+            if (count($matches[0]) > 0) {
+                foreach ($matches[0] as $mk => $mv) {
+                    $content = str_replace($mv, '$' . $context, $content);
+                }
             }
         }
 
@@ -102,7 +108,7 @@ class WList implements FunctionInterface
                 if (strpos($l['attributes']['items'], $newContext) === 0) {
                     // append the context attribute
                     $itemsAttr = 'items="' . $l['attributes']['items'] . '"';
-                    $contextAttr = ' context="' . $newContext . '"';
+                    $contextAttr = ' context="$' . $newContext . '"';
                     $content = str_replace($itemsAttr, $itemsAttr . $contextAttr, $content);
                 }
             }

@@ -33,7 +33,7 @@ class Compiler
         $template = $this->compileTemplate($templateName);
 
         // cache the result
-        $compiledTemplatePath = $this->htpl->getWriter()->write(md5($templateName).'.php', $template);
+        $compiledTemplatePath = $this->htpl->getWriter()->write(md5($templateName) . '.php', $template);
 
         // create Template instance
         $template = new Template($this->htpl, $compiledTemplatePath);
@@ -74,7 +74,8 @@ class Compiler
         $template = LayoutTree::getLayout($this->htpl->getLoader(), $templateName);
 
         // now parse the variables
-        $template = VarParser::parseTemplate($template, $this->htpl);
+        //$template = VarParser::parseTemplate($template, $this->htpl);
+        $template = Lexer::parse($template, $this->htpl);
 
         // get a list of possible functions (tags) that we support
         $functions = $this->htpl->getFunctions();

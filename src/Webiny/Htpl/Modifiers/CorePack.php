@@ -12,25 +12,84 @@ class CorePack implements ModifierPackInterface
 
         // @todo define how to issue pre-escape and post-escape modifiers
         return [
-            'abs'          => '\Webiny\Htpl\Modifiers\CorePack::abs',
-            'capitalize'   => '\Webiny\Htpl\Modifiers\CorePack::capitalize',
-            'lower'        => '\Webiny\Htpl\Modifiers\CorePack::lower',
-            'upper'        => '\Webiny\Htpl\Modifiers\CorePack::upper',
-            'firstUpper'   => '\Webiny\Htpl\Modifiers\CorePack::firstUpper',
-            'date'         => '\Webiny\Htpl\Modifiers\CorePack::date',
-            'timeAgo'      => '\Webiny\Htpl\Modifiers\CorePack::timeAgo',
-            'default'      => '\Webiny\Htpl\Modifiers\CorePack::defaultValue',
-            'first'        => '\Webiny\Htpl\Modifiers\CorePack::first',
-            'last'         => '\Webiny\Htpl\Modifiers\CorePack::last',
-            'join'         => '\Webiny\Htpl\Modifiers\CorePack::join',
-            'keys'         => '\Webiny\Htpl\Modifiers\CorePack::keys',
-            'values'       => '\Webiny\Htpl\Modifiers\CorePack::values',
-            'jsonEncode'   => '\Webiny\Htpl\Modifiers\CorePack::jsonEncode',
-            'length'       => '\Webiny\Htpl\Modifiers\CorePack::length',
-            'nl2br'        => '\Webiny\Htpl\Modifiers\CorePack::nl2br', // post-escape
-            'numberFormat' => '\Webiny\Htpl\Modifiers\CorePack::numberFormat',
-            'raw'          => '\Webiny\Htpl\Modifiers\CorePack::raw', // post-escape
-            'replace'      => '\Webiny\Htpl\Modifiers\CorePack::replace'
+            // pre-escape stage
+            'abs'          => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::abs',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'capitalize'   => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::capitalize',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'lower'        => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::lower',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'upper'        => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::upper',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'firstUpper'   => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::firstUpper',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'date'         => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::date',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'timeAgo'      => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::timeAgo',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'default'      => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::defaultValue',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'first'        => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::first',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'last'         => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::last',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'join'         => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::join',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'keys'         => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::keys',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'values'       => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::values',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'jsonEncode'   => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::jsonEncode',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'length'       => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::length',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'numberFormat' => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::numberFormat',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'replace'      => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::replace',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            // post-escape stage
+            'nl2br'        => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::nl2br',
+                'stage'    => self::STAGE_POST_ESCAPE
+            ],
+            'raw'          => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::raw',
+                'stage'    => self::STAGE_POST_ESCAPE
+            ]
         ];
     }
 

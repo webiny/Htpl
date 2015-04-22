@@ -71,6 +71,7 @@ class Selector
         $tpl = str_replace(['<head>', '</head>'], ['head-start', 'head-end'], $tpl);
         $tpl = str_replace(['<body>', '</body>'], ['body-start', 'body-end'], $tpl);
         $tpl = str_replace(['<html>', '</html>'], ['html-start', 'html-end'], $tpl);
+        $tpl = str_replace('+', '_htpl-plus-sign_', $tpl);
 
         $tplDoc->loadHtml('<w-fragment>' . $tpl . '</w-fragment>');
 
@@ -89,6 +90,7 @@ class Selector
         $tpl = str_replace(['head-start', 'head-end'], ['<head>', '</head>'], $tpl);
         $tpl = str_replace(['body-start', 'body-end'], ['<body>', '</body>'], $tpl);
         $tpl = str_replace(['html-start', 'html-end'], ['<html>', '</html>'], $tpl);
+        $tpl = str_replace('_htpl-plus-sign_', '+', $tpl);
 
         return $tpl;
     }

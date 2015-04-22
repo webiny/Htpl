@@ -37,11 +37,7 @@ class Template
             }
         }
 
-        if (is_array($value) || is_object($value)) {
-            return $value;
-        }
-
-        return $this->escape($value);
+        return $value;
     }
 
     public function escape($value)
