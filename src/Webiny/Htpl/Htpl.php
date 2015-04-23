@@ -20,6 +20,10 @@ class Htpl
         'cacheDir'     => false,
         'loader'       => '\Webiny\Htpl\Loader\Filesystem',
         'writer'       => '\Webiny\Htpl\Writer\Filesystem',
+        'lexer'        => [
+            'varStartFlag' => '{',
+            'varEndFlag'   => '}'
+        ],
         'minify'       => [
             'driver'    => '\Webiny\Htpl\Functions\WMinify\WMinify',
             'minifyDir' => 'minified'
@@ -211,6 +215,20 @@ class Htpl
     public function getModifiers()
     {
         return $this->initializedModifiers;
+    }
+
+    public function setLexerFlags($startFlag, $endFlag)
+    {
+        $this->options['lexer']['varStartFlag'] = $startFlag;
+        $this->options['lexer']['varEndFlag'] = $endFlag;
+    }
+
+    public function getLexerFlags()
+    {
+        return [
+            'varStartFlag' => $this->options['lexer']['varStartFlag'],
+            'varEndFlag'   => $this->options['lexer']['varEndFlag']
+        ];
     }
 
     private function initializeFunctions()

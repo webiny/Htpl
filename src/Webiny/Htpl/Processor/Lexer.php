@@ -110,8 +110,13 @@ class Lexer
      */
     public function getOutput()
     {
+        // get lexer flags from Htpl options
+        $lexerVarFlags = $this->htpl->getLexerFlags();
+
         // check if we need to parse the string at all
-        if (strpos($this->input, '{') === false || strpos($this->input, '}') === false) {
+        if (strpos($this->input, $lexerVarFlags['varStartFlag']) === false || strpos($this->input,
+                $lexerVarFlags['varEndFlag']) === false
+        ) {
             return $this->input;
         }
 
@@ -128,20 +133,20 @@ class Lexer
 
             $offset += strlen($result['match']);
 
-            if ($result['match'] == '{') {
+            if ($result['match'] == $lexerVarFlags['varStartFlag']) {
                 $matchedEntries++;
                 $this->parts[] = $result;
-            } else if (($matchedEntries > 0 && $result['match'] != '}')) {
+            } else if (($matchedEntries > 0 && $result['match'] != $lexerVarFlags['varEndFlag'])) {
                 $this->parts[] = $result;
-            } else if ($matchedEntries > 0 && $result['match'] == '}') {
+            } else if ($matchedEntries > 0 && $result['match'] == $lexerVarFlags['varEndFlag']) {
                 $matchedEntries--;
                 $this->parts[] = $result;
                 if ($matchedEntries == 0) {
                     $entryString = $this->joinParts();
 
-                    // remove the variable starting curly bracket
+                    // remove the variable start flag
                     array_shift($this->parts);
-                    // remove the variable ending curly bracket
+                    // remove the variable end flag
                     array_pop($this->parts);
 
                     // parse variable (variable name + attached modifiers)
@@ -575,7 +580,11 @@ class Lexer
         } else if ($param['type'] == 'array') {
             $arrayParams = [];
             foreach ($param['value'] as $a) {
-                $arrayParams[] = $this->outputParameter($a['key']) . '=>' . $this->outputParameter($a['value']);
+                if(isset($a['key'])){
+                    $arrayParams[] = $this->outputParameter($a['key']) . '=>' . $this->outputParameter($a['value']);
+                }else{
+                    $arrayParams[] = $this->outputParameter($a['value']);
+                }
             }
 
             return '[' . implode(',', $arrayParams) . ']';

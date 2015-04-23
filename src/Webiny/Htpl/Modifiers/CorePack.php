@@ -49,6 +49,10 @@ class CorePack implements ModifierPackInterface
                 'callback' => '\Webiny\Htpl\Modifiers\CorePack::first',
                 'stage'    => self::STAGE_PRE_ESCAPE
             ],
+            'format'       => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::format',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
             'last'         => [
                 'callback' => '\Webiny\Htpl\Modifiers\CorePack::last',
                 'stage'    => self::STAGE_PRE_ESCAPE
@@ -79,6 +83,18 @@ class CorePack implements ModifierPackInterface
             ],
             'replace'      => [
                 'callback' => '\Webiny\Htpl\Modifiers\CorePack::replace',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'round'        => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::round',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'stripTags'    => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::stripTags',
+                'stage'    => self::STAGE_PRE_ESCAPE
+            ],
+            'trim'         => [
+                'callback' => '\Webiny\Htpl\Modifiers\CorePack::trim',
                 'stage'    => self::STAGE_PRE_ESCAPE
             ],
             // post-escape stage
@@ -182,6 +198,15 @@ class CorePack implements ModifierPackInterface
         return array_shift($arr);
     }
 
+    public static function format($str, $parts)
+    {
+        if (!is_array($parts)) {
+            throw new HtplException(sprintf('The "format" modifier, takes only arrays.'));
+        }
+
+        return vsprintf($str, $parts);
+    }
+
     public static function last($arr)
     {
         if (!is_array($arr)) {
@@ -244,11 +269,49 @@ class CorePack implements ModifierPackInterface
         return number_format($num, $dec, $decPoint, $thousandsSep);
     }
 
-    public static function replace($str, $replacements)
+    public static function raw($str)
     {
-        //@todo smisli kako array definirati kao parametar
-
-        die(json_decode($replacements));
+        return html_entity_decode($str, ENT_QUOTES | ENT_SUBSTITUTE, 'utf-8');
     }
 
+    public static function replace($str, $replacements)
+    {
+        if (!is_array($replacements)) {
+            throw new HtplException('Modifier "replace" requires that the first param is an array.');
+        }
+
+        return str_replace(array_keys($replacements), array_values($replacements), $str);
+    }
+
+    public static function round($float, $precision = 0, $mode = 'up')
+    {
+        $modes = [
+            'up'   => PHP_ROUND_HALF_UP,
+            'down' => PHP_ROUND_HALF_DOWN
+        ];
+
+        if (!isset($modes[$mode])) {
+            throw new HtplException(sprintf('Unknown round mode "%s".', $mode));
+        }
+
+        return round($float, $precision, $modes[$mode]);
+    }
+
+    public static function stripTags($str, $allow = '')
+    {
+        return strip_tags($str, $allow);
+    }
+
+    public static function trim($str, $direction = 'both', $charMask = " \t\n\r\0\x0B")
+    {
+        if ($direction == 'both') {
+            return trim($str, $charMask);
+        } else if ($direction == 'left') {
+            return ltrim($str, $charMask);
+        } else if ($direction == 'right') {
+            return rtrim($str, $charMask);
+        } else {
+            throw new HtplException(sprintf('Unknown trim direction "%s".'), $direction);
+        }
+    }
 }
