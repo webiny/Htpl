@@ -53,67 +53,23 @@ class WList implements FunctionInterface
         }
 
         // key attribute
+        $contexts = [$attributes['var']];
         $var = '$' . $attributes['var'];
         $key = null;
         if (isset($attributes['key']) && !empty($attributes['key'])) {
+            $contexts[] = $attributes['key'];
             $key = '$' . $attributes['key'];
             $func = 'foreach (' . $items . ' as ' . $key . ' => ' . $var . '){ ';
         } else {
             $func = 'foreach (' . $items . ' as ' . $var . '){ ';
         }
 
-        // set the context
-        $content = $this->updateContext($content, $var, $key);
 
         return [
             'openingTag' => OutputWrapper::outputFunction($func),
             'content'    => $content,
-            'closingTag' => OutputWrapper::outputFunction('}')
+            'closingTag' => OutputWrapper::outputFunction('}'),
+            'contexts'   => $contexts
         ];
-    }
-
-    private function updateContext($content, $newContext, $newKeyContext = null)
-    {
-        $content = html_entity_decode($content);
-
-        $newContext = str_replace('$', '', $newContext);
-        $contexts = [$newContext];
-        if (!empty($newKeyContext)) {
-            $contexts[] = str_replace('$', '', $newKeyContext);
-        }
-        foreach ($contexts as $context) {
-            // update the context when accessing object properties
-            preg_match_all('/\$this->getVar\((\'|")' . $context . '\.([\w]+)(\1), (\$this->vars)\)/', $content,
-                $matches);
-
-            if (count($matches[0]) > 0) {
-                foreach ($matches[0] as $mk => $mv) {
-                    $content = str_replace($mv, OutputWrapper::getVar($matches[2][$mk], '$' . $context), $content);
-                }
-            }
-
-            // update context on direct property access
-            preg_match_all('/\$this->getVar\((\'|")' . $context . '(\1), (\$this->vars)\)/', $content, $matches);
-            if (count($matches[0]) > 0) {
-                foreach ($matches[0] as $mk => $mv) {
-                    $content = str_replace($mv, '$' . $context, $content);
-                }
-            }
-        }
-
-        // update context on nested loops
-        $lists = Selector::select($content, '//' . $this->getTag());
-        if (count($lists) > 0) {
-            foreach ($lists as $l) {
-                if (strpos($l['attributes']['items'], $newContext) === 0) {
-                    // append the context attribute
-                    $itemsAttr = 'items="' . $l['attributes']['items'] . '"';
-                    $contextAttr = ' context="$' . $newContext . '"';
-                    $content = str_replace($itemsAttr, $itemsAttr . $contextAttr, $content);
-                }
-            }
-        }
-
-        return $content;
     }
 }

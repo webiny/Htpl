@@ -4,6 +4,7 @@ namespace Webiny\Htpl\Functions;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
+use Webiny\Htpl\Processor\OutputWrapper;
 
 class WInclude implements FunctionInterface
 {
@@ -38,18 +39,58 @@ class WInclude implements FunctionInterface
             return false;
         }
 
-        // validate the file before including it
-        if (substr($attributes['file'], -5) != '.htpl' && substr($attributes['file'], -5) != '.html') {
-            throw new HtplException('Cannot include "' . $attributes['file'] . '", only html and htpl files are allowed.');
+        // get the include callback
+        if (substr($attributes['file'], -5) == '.htpl') {
+            $callback = 'Webiny\Htpl\Functions\WInclude::htpl';
+        } else if (substr($attributes['file'], -5) == '.html') {
+            $callback = 'Webiny\Htpl\Functions\WInclude::html';
+        } else {
+            // treat as variable
+            $callback = 'Webiny\Htpl\Functions\WInclude::dynamic';
         }
 
-        // get the contents // @todo enable variable support
-        $content = file_get_contents($htpl->getTemplateDir() . $attributes['file']);
+        $callback .= '("' . $attributes['file'] . '", $this->getHtplInstance())';
 
         return [
             'openingTag' => '',
-            'content'    => $content,
+            'content'    => OutputWrapper::outputFunction($callback),
             'closingTag' => ''
         ];
+    }
+
+    public static function htpl($file, Htpl $htpl)
+    {
+        $path = self::resolveIncludePath($file, $htpl);
+
+        $htpl->render(str_replace($htpl->getTemplateDir(), '', $path));
+    }
+
+    public static function html($file, Htpl $htpl)
+    {
+        $path = self::resolveIncludePath($file, $htpl);
+
+        echo file_get_contents($path);
+    }
+
+    public static function dynamic($file, Htpl $htpl)
+    {
+        die('dynamic:' . $file);
+    }
+
+    private static function resolveIncludePath($file, Htpl $htpl)
+    {
+        // check if absolute or relative path
+        if ($file[0] != DIRECTORY_SEPARATOR && $file[1] != ':') {
+            $fullPath = $htpl->getTemplateDir() . $htpl->getTemplate();
+            $path = realpath(dirname($fullPath) . DIRECTORY_SEPARATOR . dirname($file) . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . basename($file);
+        } else {
+            $path = realpath($htpl->getTemplateDir() . $file);
+        }
+
+        if (!$path) {
+            throw new HtplException(sprintf('Unable to include "%s" since file doesn\'t exist', $file));
+        }
+
+        return $path;
     }
 }

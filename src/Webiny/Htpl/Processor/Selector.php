@@ -7,13 +7,14 @@ class Selector
 
     public static function select($source, $query)
     {
+
         // disable libxml errors because it doesn't support html5 tags
         libxml_use_internal_errors(true);
 
         $doc = new \DOMDocument();
         $doc->preserveWhiteSpace = true;
         $doc->formatOutput = true;
-        $doc->substituteEntities = false;
+        $doc->substituteEntities = true;
         $doc->loadHtml($source);
         libxml_clear_errors();
 
@@ -28,14 +29,14 @@ class Selector
             $innerHtml = '';
             $children = $r->childNodes;
             foreach ($children as $child) {
-                $innerHtml .= urldecode($child->ownerDocument->saveHtml($child));
+                $innerHtml .= $child->ownerDocument->saveHtml($child);
             }
-            $entry['content'] = $innerHtml;
+            $entry['content'] = urldecode($innerHtml);
             $xAttributes = $r->attributes;
             foreach ($xAttributes as $a) {
                 $entry['attributes'][$a->name] = $a->value;
             }
-            $entry['outerHtml'] = urldecode($r->ownerDocument->saveHtml($r));
+            $entry['outerHtml'] = html_entity_decode(urldecode($r->ownerDocument->saveHtml($r)));
             $result[] = $entry;
         }
 
@@ -47,6 +48,7 @@ class Selector
         $source = Selector::prepare($source);
 
         $results = self::select($source, $query);
+
         if (count($results) < 1) {
             return $source;
         }

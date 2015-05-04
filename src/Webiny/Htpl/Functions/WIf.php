@@ -47,7 +47,7 @@ class WIf implements FunctionInterface
         ];
     }
 
-    private function parseConditions($conditions)
+    protected function parseConditions($conditions)
     {
         // extract the strings
         preg_match_all('/([\'])([A-z][A-z\.0-9]+)\1/', $conditions, $matches, PREG_OFFSET_CAPTURE);
@@ -64,21 +64,34 @@ class WIf implements FunctionInterface
             }
         }
 
+        $testFunctions = [
+            'isset'  => 'isset',
+            'isnull' => 'isnull',
+            'empty'  => 'empty'
+        ];
+
+        // protected var names
+        $protectedVarNames = ['false', 'true', 'null'];
+
         // extract the variables
         preg_match_all('/([A-z][\w\.]+)/', $conditions, $matches, PREG_OFFSET_CAPTURE);
 
         if (count($matches[0]) > 0) {
             $countOffset = 0;
             foreach ($matches[0] as $m) {
-                if (isset($vars[$m[0]])) {
-                    $var = $vars[$m[0]];
-                } else {
-                    $var = OutputWrapper::getVar($m[0]);
+                //print_r($m);
+                if (!in_array($m[0], $testFunctions) && !in_array($m[0], $protectedVarNames)) {
+                    if (isset($vars[$m[0]])) {
+                        $var = $vars[$m[0]];
+                    } else {
+                        $var = OutputWrapper::getVar($m[0]);
+                    }
+
+                    $conditions = substr_replace($conditions, $var, $m[1] + $countOffset, strlen($m[0]));
+
+                    $countOffset += strlen($var) - strlen($m[0]);
                 }
 
-                $conditions = substr_replace($conditions, $var, $m[1] + $countOffset, strlen($m[0]));
-
-                $countOffset += strlen($var) - strlen($m[0]);
             }
         }
 

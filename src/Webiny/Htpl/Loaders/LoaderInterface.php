@@ -37,5 +37,5 @@ interface LoaderInterface
      *
      * @return bool Is the template still fresh.
      */
-    public function getFreshness($name);
+    public function createdOn($name);
 }

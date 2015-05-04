@@ -13,7 +13,15 @@ use Webiny\Htpl\Writer\WriterInterface;
 
 class Htpl
 {
+    /**
+     * @var string Template root path.
+     */
     private $templateDir = '';
+
+    /**
+     * @var string Name of the current template.
+     */
+    private $template = '';
 
     private $options = [
         'forceCompile' => false,
@@ -33,10 +41,12 @@ class Htpl
     private $assignedVars = [];
 
     private $internalFunctions = [
-        'w-if'      => '\Webiny\Htpl\Functions\WIf',
-        'w-include' => '\Webiny\Htpl\Functions\WInclude',
-        'w-list'    => '\Webiny\Htpl\Functions\WList',
-        'w-minify'  => '\Webiny\Htpl\Functions\WMinify'
+        /*'\Webiny\Htpl\Functions\WIf',
+        '\Webiny\Htpl\Functions\WElse',
+        '\Webiny\Htpl\Functions\WElseIf',
+        '\Webiny\Htpl\Functions\WInclude',*/
+        '\Webiny\Htpl\Functions\WList',
+        '\Webiny\Htpl\Functions\WMinify'
     ];
 
     private $internalModifiers = [
@@ -111,6 +121,7 @@ class Htpl
      */
     function fetch($template, $parameters = [])
     {
+        $this->template = $template;
         $this->assignArray($parameters);
 
         // compile the template
@@ -191,6 +202,14 @@ class Htpl
     }
 
     /**
+     * @return string Returns the current template name.
+     */
+    public function getTemplate()
+    {
+        return $this->template;
+    }
+
+    /**
      * Register a function.
      *
      * @param FunctionInterface $function
@@ -233,9 +252,11 @@ class Htpl
 
     private function initializeFunctions()
     {
-        foreach ($this->internalFunctions as $tag => $callback) {
+        foreach ($this->internalFunctions as $funcClass) {
+            $instance = new $funcClass;
+            $tag = $instance->getTag();
             if (!isset($this->initializedFunctions[$tag])) {
-                $this->initializedFunctions[$tag] = new $callback;
+                $this->initializedFunctions[$tag] = $instance;
             }
         }
     }

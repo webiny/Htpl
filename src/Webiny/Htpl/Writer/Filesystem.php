@@ -81,6 +81,7 @@ class Filesystem implements WriterInterface
 
     private function getFullPath($file)
     {
+        $file = md5($file) . '.php';
         $path = explode(DIRECTORY_SEPARATOR, $this->writerDir . $file);
         $file = array_pop($path);
         $path = implode(DIRECTORY_SEPARATOR, $path);

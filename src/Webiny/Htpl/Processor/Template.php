@@ -53,6 +53,6 @@ class Template
 
     public function display()
     {
-        include $this->template;
+        eval('?>' . $this->template . '<?php');
     }
 }

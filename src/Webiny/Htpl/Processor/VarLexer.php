@@ -4,7 +4,7 @@ namespace Webiny\Htpl\Processor;
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 
-class Lexer
+class VarLexer
 {
     // general types
     const T_STRING = 'T_STRING';

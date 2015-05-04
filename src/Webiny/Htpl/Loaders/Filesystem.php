@@ -112,7 +112,7 @@ class Filesystem implements LoaderInterface
      *
      * @return bool Is the template still fresh.
      */
-    public function getFreshness($name)
+    public function createdOn($name)
     {
         return filemtime($this->locateTemplate($name));
     }
