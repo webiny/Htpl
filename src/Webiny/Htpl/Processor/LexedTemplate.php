@@ -13,14 +13,30 @@ class LexedTemplate
         $this->sourceTemplate = $sourceTemplate;
     }
 
-    public function replace(array $query, $replacement)
-    {
-
-    }
-
     public function getLexedTags()
     {
         return $this->lexedTags;
+    }
+
+    public function select($tag, $attributes = [])
+    {
+        $result = [];
+
+        foreach ($this->lexedTags as $t) {
+            if ($t['name'] == $tag) {
+                if (count($attributes) > 0) {
+                    foreach ($attributes as $k => $v) {
+                        if (!isset($t['attributes'][$k]) || $t['attributes'][$k] != $v) {
+                            continue;
+                        }
+                    }
+                }
+
+                $result[] = $t;
+            }
+        }
+
+        return $result;
     }
 
     public function getTemplate()

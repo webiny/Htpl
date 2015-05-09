@@ -14,28 +14,17 @@ use Webiny\Htpl\Writer\WriterInterface;
 class Htpl
 {
     /**
-     * @var string Template root path.
-     */
-    private $templateDir = '';
-
-    /**
      * @var string Name of the current template.
      */
     private $template = '';
 
     private $options = [
         'forceCompile' => false,
-        'cacheDir'     => false,
-        'loader'       => '\Webiny\Htpl\Loader\Filesystem',
-        'writer'       => '\Webiny\Htpl\Writer\Filesystem',
         'lexer'        => [
             'varStartFlag' => '{',
             'varEndFlag'   => '}'
         ],
-        'minify'       => [
-            'driver'    => '\Webiny\Htpl\Functions\WMinify\WMinify',
-            'minifyDir' => 'minified'
-        ]
+        'minify'       => []
     ];
 
     private $assignedVars = [];
@@ -67,11 +56,9 @@ class Htpl
     private $writer;
 
 
-    public function __construct($templateDir, LoaderInterface $loader = null, WriterInterface $writer = null)
+    public function __construct(LoaderInterface $loader, WriterInterface $writer)
     {
         // @todo: update the options here
-
-        $this->setTemplateDir($templateDir);
 
         // initialize functions
         $this->initializeFunctions();
@@ -80,10 +67,10 @@ class Htpl
         $this->initializeModifiers();
 
         // set loader (default: filesystem loader)
-        $this->loader = is_null($loader) ? new Filesystem([$this->getTemplateDir()]) : $loader;
+        $this->loader = $loader;
 
         // set writer
-        $this->writer = is_null($writer) ? new Writer\Filesystem($this->getTemplateDir() . 'compiled/') : $writer;
+        $this->writer = $writer;
     }
 
     public function getLoader()
@@ -99,6 +86,11 @@ class Htpl
     public function getOptions()
     {
         return $this->options;
+    }
+
+    public function setOptions($options)
+    {
+        $this->options = array_merge($this->options,$options);
     }
 
     public function setForceCompile($forceCompile)
@@ -168,37 +160,6 @@ class Htpl
     function getVars()
     {
         return $this->assignedVars;
-    }
-
-    /**
-     * Root dir where the templates are stored.
-     *
-     * @param string $dir Absolute path to the directory that holds the templates.
-     *
-     * @throws HtplException
-     * @return void
-     */
-    public function setTemplateDir($dir)
-    {
-        if (substr($dir, -1) != DIRECTORY_SEPARATOR) {
-            $dir .= '/';
-        }
-
-        if ($dir[0] != '/' && $dir[1] != ':') {
-            throw new HtplException('Template dir path must be an absolute path.');
-        }
-
-        $this->templateDir = $dir;
-    }
-
-    /**
-     * Returns the root dir where the templates are stored.
-     *
-     * @return string
-     */
-    public function getTemplateDir()
-    {
-        return $this->templateDir;
     }
 
     /**

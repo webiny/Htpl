@@ -5,7 +5,6 @@ namespace Webiny\Htpl\Functions;
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 use Webiny\Htpl\Processor\OutputWrapper;
-use Webiny\Htpl\Processor\Selector;
 
 class WMinify implements FunctionInterface
 {
@@ -39,53 +38,52 @@ class WMinify implements FunctionInterface
         }
 
         // check if it's javascript
-        $items = Selector::select($content, '//script');
-        if (count($items) > 0) {
-
-            // extract items
-            $files = [];
-            foreach ($items as $i) {
-                $files[] = $i['attributes']['src'];
-            }
-
-            $callback = '\Webiny\Htpl\Functions\WMinify::minifyCallback(' . var_export($files,
+        preg_match_all('/src=(\'|")([\W\w]+?)\1/', $content, $items);
+        if (count($items[2]) > 0) {
+            $callback = '\Webiny\Htpl\Functions\WMinify::minifyCallback(' . var_export($items[2],
                     true) . ', "js", $this->getHtplInstance())';
         } else {
             // check if css
-            $items = Selector::select($content, '//link');
-            if (count($items) > 0) {
-                // extract items
-                $files = [];
-                foreach ($items as $i) {
-                    $files[] = $i['attributes']['href'];
-                }
-
-                $callback = '\Webiny\Htpl\Functions\WMinify::minifyCallback(' . var_export($files,
+            preg_match_all('/href=(\'|")([\W\w]+?)\1/', $content, $items);
+            if (count($items[2]) > 0) {
+                $callback = '\Webiny\Htpl\Functions\WMinify::minifyCallback(' . var_export($items[2],
                         true) . ', "css", $this->getHtplInstance())';
             }
         }
 
-        return [
-            'openingTag' => '',
-            'content'    => OutputWrapper::outputFunction($callback),
-            'closingTag' => ''
-        ];
+        if (isset($callback)) {
+            return [
+                'openingTag' => '',
+                'content'    => OutputWrapper::outputFunction($callback),
+                'closingTag' => ''
+            ];
+        } else {
+            return false;
+        }
     }
 
     public static function minifyCallback($files, $type, Htpl $htpl)
     {
         // get minify driver instance
-        $driver = $htpl->getOptions()['minify']['driver'];
-        $minifyDriver = new $driver($htpl);
-        if (!($minifyDriver instanceof \Webiny\Htpl\Functions\WMinify\WMinifyInterface)) {
-            throw new HtplException('Minify driver must implement \Webiny\Htpl\Functions\WMinify\WMinifyInterface.');
+        $options = $htpl->getOptions()['minify'];
+        if (empty($options)) {
+            throw new HtplException('Missing options for w-minify function.');
+        }
+
+        // get driver
+        $driver = isset($options['driver']) ? $options['driver'] : '\Webiny\Htpl\Functions\WMinify\WMinify';
+        if (!is_object($driver)) {
+            $driver = new $driver($htpl);
+        }
+        if (!($driver instanceof \Webiny\Htpl\Functions\WMinify\WMinifyAbstract)) {
+            throw new HtplException('Minify driver must implement \Webiny\Htpl\Functions\WMinify\WMinifyAbstract.');
         }
 
         if ($type == 'js') {
-            $minifiedFile = $minifyDriver->minifyJavaScript($files);
+            $minifiedFile = $driver->minifyJavaScript($files);
             echo '<script type="text/javascript" src="' . $minifiedFile . '"></script>';
         } else if ($type == 'css') {
-            $minifiedFile = $minifyDriver->minifyCss($files);
+            $minifiedFile = $driver->minifyCss($files);
             echo '<link rel="stylesheet" href="' . $minifiedFile . '"></link>';
         } else {
             throw new HtplException(sprintf('Unknown $type value for minify callback: %s', $type));

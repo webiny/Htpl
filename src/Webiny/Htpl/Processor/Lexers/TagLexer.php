@@ -1,9 +1,10 @@
 <?php
-namespace Webiny\Htpl\Processor;
+namespace Webiny\Htpl\Processor\Lexers;
 
 use Webiny\Htpl\HtplException;
+use Webiny\Htpl\Processor\LexedTemplate;
 
-class TagLexer
+class TagLexer extends AbstractLexer
 {
     // general types
     const T_STRING = 'T_STRING';
@@ -13,8 +14,7 @@ class TagLexer
     const T_WHITESPACE = 'T_WHITESPACE';
     const T_EQUAL = 'T_EQUAL';
 
-
-    // array
+    // tag types
     const TAG_END = 'TAG_END';
     const TAG_OPEN = 'TAG_OPEN';
     const TAG_CLOSE = 'TAG_CLOSE';
@@ -32,35 +32,19 @@ class TagLexer
         '/^(\s+)/'      => self::T_WHITESPACE,
         '/^(\=)/'       => self::T_EQUAL,
         // tags
+        '/^(\/\>)/'     => self::TAG_SELF_CLOSE,
         '/^(\<\/)/'     => self::TAG_END,
         '/^(\<)/'       => self::TAG_OPEN,
         '/^(\>)/'       => self::TAG_CLOSE,
-        '/^(\<\/)/'     => self::TAG_SELF_CLOSE,
         // other
         '/^(\S)/'       => self::T_OTHER
     );
 
     /**
-     * @var array Tokens.
+     * @var array List of parsed tags.
      */
-    private $parts = [];
-
-    /**
-     * @var array Current var data.
-     */
-    private $currentVar = [];
-
-    /**
-     * @var string Given input that will be parsed.
-     */
-    private $input;
-
-    /**
-     * @var Htpl Current Htpl instance.
-     */
-    private $htpl;
-
     private $tags = [];
+
 
     /**
      * Parses the given input
@@ -77,7 +61,7 @@ class TagLexer
             $lexedTags = $instance->getOutput();
         } catch (HtplException $e) {
 
-            throw new HtplException(sprintf('Unable to parse the template.' . "\n") . $e->getMessage());
+            throw new HtplException(sprintf('Unable to parse the template.' . "\n"), 0, $e);
         }
 
         return new LexedTemplate($lexedTags, $input);
@@ -118,108 +102,9 @@ class TagLexer
             $this->skipWhitespace();
             $currentLine = explode("\n", $this->joinParts());
             throw new HtplException(sprintf('Error near %s.' . "\n",
-                    $currentLine[0] . "\n" . $currentLine[1] . "\n" . $currentLine[2]) . $e->getMessage());
+                $currentLine[0] . "\n" . $currentLine[1] . "\n" . $currentLine[2]), 0, $e);
         }
 
-    }
-
-    /**
-     * Tokenizes the given line.
-     *
-     * @param string $line   Current line.
-     * @param int    $number Line number.
-     * @param int    $offset Token offset.
-     *
-     * @return array|bool
-     */
-    private function tokenize($line, $number, $offset)
-    {
-        $string = substr($line, $offset);
-
-        foreach (static::$_terminals as $pattern => $name) {
-            if (preg_match($pattern, $string, $matches)) {
-                return array(
-                    'match' => $matches[1],
-                    'token' => $name,
-                    'line'  => $number + 1
-                );
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Moves the cursor to the next token.
-     */
-    private function moveCursor()
-    {
-        $this->shiftedParts[] = array_shift($this->parts);
-    }
-
-    private function prevCursor()
-    {
-        $part = array_pop($this->shiftedParts);
-        array_unshift($this->parts, $part);
-    }
-
-    /**
-     * Get the current token name.
-     *
-     * @return string|bool Current token name, or false if there are no tokens.
-     */
-    private function currentToken()
-    {
-        return isset($this->parts[0]) ? $this->parts[0]['token'] : false;
-    }
-
-    /**
-     * Get the value of current token.
-     *
-     * @return string|bool Current token value, or false if there no tokens.
-     */
-    private function currentValue()
-    {
-        return isset($this->parts[0]) ? $this->parts[0]['match'] : false;
-    }
-
-    /**
-     * Moves the cursor so it skips all the whitespace tokens.
-     */
-    private function skipWhitespace()
-    {
-        $whitespaces = '';
-        while ($this->currentToken() == self::T_WHITESPACE) {
-            $whitespaces .= $this->currentValue();
-            $this->moveCursor();
-        }
-
-        return $whitespaces;
-    }
-
-    /**
-     * Counts the number of remaining tokens.
-     *
-     * @return int Current token count.
-     */
-    private function countParts()
-    {
-        return count($this->parts);
-    }
-
-    /**
-     * Joins the remaining parts into a string.
-     *
-     * @return string
-     */
-    private function joinParts()
-    {
-        $str = '';
-        foreach ($this->parts as $p) {
-            $str .= $p['match'];
-        }
-
-        return $str;
     }
 
     private function lexTags()
@@ -236,68 +121,116 @@ class TagLexer
 
     private function lexTag()
     {
+        $start = $this->countParts();
+
+        // check if it's opening tag
         if ($this->currentToken() != self::TAG_OPEN) {
             $this->moveCursor();
             return false;
         }
 
-        $openingTag = $this->currentValue();
+        // we only parse the tags with the w- prefix
         $this->moveCursor();
         if (substr($this->currentValue(), 0, 2) != 'w-') {
             $this->moveCursor();
             return false;
         }
 
+        // get tag name
+        $name = $this->lexTagName();
+
+        // check if the tag has parameters
+        $parameters = [];
+        if ($this->currentToken() != self::TAG_CLOSE && $this->currentToken() != self::TAG_SELF_CLOSE) {
+            // parameters
+            $this->skipWhitespace();
+            $parameters = $this->lexTagParameters();
+        }
+
+        // get all the parts between when we stared parsing the opening tag, and when we stopped
+        $openingTag = '';
+        $partCount = count($this->shiftedParts);
+        $dif = ($start - $this->countParts());
+        for ($i = 0; $i < $dif; $i++) {
+            $openingTag .= $this->shiftedParts[$partCount - $dif + $i]['match'];
+        }
+        $openingTag .= $this->currentValue();
+
+        // tag close
+        if ($this->currentToken() != self::TAG_CLOSE && $this->currentToken() != self::TAG_SELF_CLOSE) {
+            throw new HtplException(sprintf('Expecting %s, got %s.', self::TAG_CLOSE, $this->currentToken()));
+        }
+
+        // content
+        $content = '';
+        if ($this->currentToken() != self::TAG_SELF_CLOSE) {
+            $this->moveCursor();// move the TAG_CLOSE
+            $content = $this->lexTagContent($name);
+        }
+
+
+        return [
+            'name'       => $name,
+            'content'    => $content,
+            'attributes' => $parameters,
+            'outerHtml'  => $openingTag . $content . '</' . $name . '>'
+        ];
+    }
+
+    private function lexTagName()
+    {
+        if ($this->currentToken() != self::T_STRING) {
+            throw new HtplException(sprintf('Expecting %s, got %s.', self::T_STRING, $this->currentToken()));
+        }
+
         // tag name
         $name = $this->currentValue();
         $this->moveCursor();
-        $openingTag .= $name;
 
-        // parameters
-        $openingTag .= $this->skipWhitespace();
+        return $name;
+    }
+
+    private function lexTagParameters()
+    {
         $parameters = [];
         if ($this->currentToken() == self::T_STRING) {
             do {
                 // param name
                 $paramName = $this->currentValue();
-                $openingTag .= $paramName;
+
                 // equal sign
                 $this->moveCursor();
-                $openingTag .= $this->skipWhitespace();
                 if ($this->currentToken() != self::T_EQUAL) {
-                    if($this->currentToken()==self::TAG_CLOSE){
+                    if ($this->currentToken() == self::TAG_CLOSE || $this->currentToken() == self::TAG_SELF_CLOSE) {
                         break;
                     }
 
                     throw new HtplException(sprintf('Unexpected %s, expecting %s', $this->currentToken(),
                         self::T_EQUAL));
                 }
-                $openingTag .= $this->currentValue();
+
                 // open quote for param value
                 $this->moveCursor();
-                $openingTag .= $this->skipWhitespace();
                 if ($this->currentToken() != self::T_DOUBLE_QUOTE && $this->currentToken() != self::T_SINGLE_QUOTE) {
                     throw new HtplException(sprintf('Unexpected %s, expecting %s or %s', $this->currentToken(),
                         self::T_DOUBLE_QUOTE, self::T_SINGLE_QUOTE));
                 }
                 $openQuote = $this->currentToken();
-                $openingTag .= $this->currentValue();
+
                 // param value
                 $this->moveCursor();
                 $value = '';
                 while ($this->currentToken() != $openQuote) {
                     $value .= $this->currentValue();
-                    $openingTag .= $this->currentValue();
                     $this->moveCursor();
                 }
 
                 // end quote
-                $openingTag .= $this->currentValue();
                 $this->moveCursor();
 
+                // possible separator before the next whitespace
                 if ($this->currentToken() == self::T_WHITESPACE) {
-                    $openingTag .= $this->currentValue();
-                    $this->moveCursor();
+                    $this->skipWhitespace();
                 }
 
                 // store param
@@ -305,25 +238,32 @@ class TagLexer
             } while ($this->currentToken() != self::TAG_CLOSE && $this->currentToken() != self::TAG_SELF_CLOSE && $this->currentToken() != self::TAG_OPEN);
         }
 
-        $openingTag .= $this->currentValue();
-        $this->moveCursor();
+        return $parameters;
+    }
 
-        // content
+    private function lexTagContent($tagName)
+    {
+        // quick check if we have a closing tag
+        if (stripos($this->input, '</' . $tagName . '>') == false) {
+            throw new HtplException(sprintf('Missing a closing tag for %s block.', $tagName));
+        }
+
         $content = '';
-        $closingTag = '';
         while ($this->countParts() > 0) {
             $value = $this->currentValue();
+            // check if it's the tag end for the current tag
             if ($this->currentToken() == self::TAG_END || $this->currentToken() == self::TAG_SELF_CLOSE) {
                 $this->moveCursor();
 
-                if ($value . $this->currentValue() == '</' . $name) {
+                if ($value . $this->currentValue() == '</' . $tagName) {
                     $this->moveCursor();
-                    $closingTag = '</' . $name . '>';
                     break;
                 } else {
                     $content .= $value . $this->currentValue();
                 }
+                // check if a new tag is inside the current tag
             } elseif ($this->currentToken() == self::TAG_OPEN) {
+                // try to parse the nested tag
                 $tag = $this->lexTag();
                 if ($tag) {
                     $this->tags[] = $tag;
@@ -341,12 +281,6 @@ class TagLexer
             $this->moveCursor();
         }
 
-        return [
-            'name'       => $name,
-            'content'    => $content,
-            'attributes' => $parameters,
-            'outerHtml'  => $openingTag . $content . $closingTag
-        ];
+        return $content;
     }
-
 }

@@ -13,21 +13,8 @@ use Webiny\Htpl\HtplException;
  *
  * @package Webiny\Htpl\Functions\WMinify
  */
-class WMinify implements WMinifyInterface
+class WMinify extends WMinifyAbstract
 {
-
-    protected $htpl;
-
-    /**
-     * Base constructor.
-     *
-     * @param Htpl $htpl Current Htpl instance.
-     */
-    public function __construct(Htpl $htpl)
-    {
-        $this->htpl = $htpl;
-    }
-
     /**
      * Callback that receives a list of absolute paths to one or more css files.
      * As a result it should return an http absolute path to the minified css file.
@@ -44,19 +31,20 @@ class WMinify implements WMinifyInterface
 
         // check the cache
         foreach ($files as $f) {
-            $modTime = $this->getFileModTime($f);
+            $modTime = $this->getWriter()->createdOn($f);
             $cacheKeyParts[] = $f . '-' . $modTime;
         }
         $cacheKey = 'htpl.' . md5(implode('', $files)) . '.min.css';
-        $minifiedFile = $this->htpl->getOptions()['minify']['minifyDir'] . '/' . $cacheKey;
 
-        if ($this->minifiedFileExists($cacheKey)) {
-            return $minifiedFile;
+        $minifiedFile = $this->getWriter()->getFilePath($cacheKey);
+        if ($minifiedFile != false) {
+            $minifiedFileData = explode(DIRECTORY_SEPARATOR, $minifiedFile);
+            return $this->getWebRoot() . end($minifiedFileData);
         }
 
         // agregate and parse the files
         foreach ($files as $f) {
-            $content = $this->getFileContent($f);
+            $content = $this->getLoader()->getSource($f);
 
             if (substr($f, -7) != 'min.css') {
                 // parse "import tags"
@@ -66,7 +54,7 @@ class WMinify implements WMinifyInterface
                     $importLoop = 0;
                     foreach ($imports[3] as $importCss) {
                         $path = $this->relativeUrlToAbsolute($importCss . '.css', $f);
-                        $importContent = $this->getFileContent($path);
+                        $importContent = $this->getLoader()->getSource($path);
 
                         $content = str_replace($imports[0][$importLoop], $importContent, $content);
 
@@ -89,11 +77,13 @@ class WMinify implements WMinifyInterface
                 $mIndex = 0;
                 foreach ($matches[0] as $m) {
                     $path = str_replace(['"', "'"], '', $matches[1][$mIndex]);
-                    // convert the path
-                    $path = $this->relativeUrlToAbsolute($path, $f);
+                    if (strpos($path, 'https:') === false && strpos($path, 'http:') === false) {
+                        // convert the path
+                        $path = $this->relativeUrlToAbsolute($path, $f);
 
-                    // replace all the paths inside the content
-                    $content = str_replace($m, 'url("' . $path . '")', $content);
+                        // replace all the paths inside the content
+                        $content = str_replace($m, 'url("/' . $path . '")', $content);
+                    }
 
                     $mIndex++;
                 }
@@ -102,11 +92,11 @@ class WMinify implements WMinifyInterface
             $minifiedFileContent .= "\n" . $content;
         }
 
-        // write the file
-        $this->writeMinifiedFile($cacheKey, $minifiedFileContent);
+        // write the minified file and return the path
+        $minifiedFile = $this->getWriter()->write($cacheKey, $minifiedFileContent);
 
-        // return the html tag
-        return $minifiedFile;
+        $minifiedFileData = explode(DIRECTORY_SEPARATOR, $minifiedFile);
+        return $this->getWebRoot() . end($minifiedFileData);
     }
 
     /**
@@ -125,19 +115,20 @@ class WMinify implements WMinifyInterface
 
         // check the cache
         foreach ($files as $f) {
-            $modTime = $this->getFileModTime($f);
+            $modTime = $this->getWriter()->createdOn($f);
             $cacheKeyParts[] = $f . '-' . $modTime;
         }
-        $cacheKey = 'htpl-minify-' . md5(implode('', $cacheKeyParts)) . '.min.js';
-        $minifiedFile = $this->htpl->getOptions()['minify']['minifyDir'] . '/' . $cacheKey;
+        $cacheKey = 'htpl.' . md5(implode('', $cacheKeyParts)) . '.min.js';
 
-        if ($this->minifiedFileExists($cacheKey)) {
-            return $minifiedFile;
+        $minifiedFile = $this->getWriter()->getFilePath($cacheKey);
+        if ($minifiedFile != false) {
+            $minifiedFileData = explode(DIRECTORY_SEPARATOR, $minifiedFile);
+            return $this->getWebRoot() . end($minifiedFileData);
         }
 
-        // agregate and parse the files
+        // aggregate and parse the files
         foreach ($files as $f) {
-            $content = $this->getFileContent($f);
+            $content = $this->getLoader()->getSource($f);
             // check if we need to minify the file
             if (substr($f, -6) != 'min.js') {
                 // minify
@@ -150,29 +141,11 @@ class WMinify implements WMinifyInterface
             $minifiedFileContent .= "\n" . $content;
         }
 
-        // write the file
-        $this->writeMinifiedFile($cacheKey, $minifiedFileContent);
+        // write the minified file and return the path
+        $minifiedFile = $this->getWriter()->write($cacheKey, $minifiedFileContent);
 
-        return $minifiedFile;
-    }
-
-    protected function getFileContent($file)
-    {
-        if (strpos($file, '://') !== false) {
-            throw new HtplException(sprintf('You can only minify your local files. %s cannot be minifed.', $file));
-        }
-
-        return file_get_contents($file);
-    }
-
-    protected function getFileModTime($file)
-    {
-        if (strpos($file, '://') !== false) {
-            throw new HtplException(sprintf('You can only minify your local files. %s cannot be minifed.', $file));
-        }
-
-        $file = $this->htpl->getTemplateDir() . $file;
-        return filemtime($file);
+        $minifiedFileData = explode(DIRECTORY_SEPARATOR, $minifiedFile);
+        return $this->getWebRoot() . end($minifiedFileData);
     }
 
     protected function relativeUrlToAbsolute($rel, $base)
@@ -198,30 +171,5 @@ class WMinify implements WMinifyInterface
         }
 
         return implode('/', $out);
-    }
-
-    protected function writeMinifiedFile($filename, &$content)
-    {
-        $dir = $this->htpl->getTemplateDir() . $this->htpl->getOptions()['minify']['minifyDir'] . '/';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        return file_put_contents($dir . $filename, $content);
-    }
-
-    protected function minifiedFileExists($filename)
-    {
-        $dir = $this->htpl->getTemplateDir() . $this->htpl->getOptions()['minify']['minifyDir'];
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        clearstatcache(true, $dir . $filename);
-        if (file_exists($dir . $filename)) {
-            return true;
-        }
-
-        return false;
     }
 }

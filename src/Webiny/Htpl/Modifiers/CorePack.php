@@ -9,10 +9,10 @@ class CorePack implements ModifierPackInterface
 
     public static function getModifiers()
     {
-
-        // @todo define how to issue pre-escape and post-escape modifiers
         return [
+            //
             // pre-escape stage
+            //
             'abs'          => [
                 'callback' => '\Webiny\Htpl\Modifiers\CorePack::abs',
                 'stage'    => self::STAGE_PRE_ESCAPE
@@ -97,7 +97,9 @@ class CorePack implements ModifierPackInterface
                 'callback' => '\Webiny\Htpl\Modifiers\CorePack::trim',
                 'stage'    => self::STAGE_PRE_ESCAPE
             ],
+            //
             // post-escape stage
+            //
             'nl2br'        => [
                 'callback' => '\Webiny\Htpl\Modifiers\CorePack::nl2br',
                 'stage'    => self::STAGE_POST_ESCAPE

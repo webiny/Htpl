@@ -14,7 +14,7 @@ interface WriterInterface
     /**
      * Writes the given content.
      *
-     * @param string $file Can be a filename, or a path.
+     * @param string $file    Can be a filename, or a path.
      * @param string $content Content that should be written.
      *
      * @return string Absolute path to the written file.
@@ -47,4 +47,13 @@ interface WriterInterface
      * @return int|bool Unix timestamp, or false if file doesn't exist.
      */
     public function createdOn($file);
+
+    /**
+     * If the file exists, returns the full file path, otherwise false.
+     *
+     * @param string $file Can be a filename, or a path.
+     *
+     * @return string|false
+     */
+    public function getFilePath($file);
 }

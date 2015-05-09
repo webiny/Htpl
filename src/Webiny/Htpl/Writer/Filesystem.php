@@ -79,9 +79,36 @@ class Filesystem implements WriterInterface
         }
     }
 
+    /**
+     * If the file exists, returns the full file path, otherwise false.
+     *
+     * @param string $file Can be a filename, or a path.
+     *
+     * @return string|false
+     */
+    public function getFilePath($file)
+    {
+        $file = $this->getFilename($file);
+        $path = $this->writerDir . $file;
+        if (file_exists($path)) {
+            return $path;
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns the full path to the given file.
+     * If the root folder, in which the file is placed, doesn't exist, it will be created.
+     *
+     * @param string $file Can be a filename, or a path.
+     *
+     * @return string
+     */
     private function getFullPath($file)
     {
-        $file = md5($file) . '.php';
+
+        $file = $this->getFilename($file);
         $path = explode(DIRECTORY_SEPARATOR, $this->writerDir . $file);
         $file = array_pop($path);
         $path = implode(DIRECTORY_SEPARATOR, $path);
@@ -91,5 +118,11 @@ class Filesystem implements WriterInterface
         }
 
         return rtrim($path) . DIRECTORY_SEPARATOR . $file;
+    }
+
+    private function getFilename($file)
+    {
+        $extData = explode('.', $file);
+        return md5($file) . '.' . array_pop($extData);
     }
 }

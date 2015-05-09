@@ -1,10 +1,11 @@
 <?php
-namespace Webiny\Htpl\Processor;
+namespace Webiny\Htpl\Processor\Lexers;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
+use Webiny\Htpl\Processor\OutputWrapper;
 
-class VarLexer
+class VarLexer extends AbstractLexer
 {
     // general types
     const T_STRING = 'T_STRING';
@@ -48,19 +49,9 @@ class VarLexer
     );
 
     /**
-     * @var array Tokens.
-     */
-    private $parts = [];
-
-    /**
      * @var array Current var data.
      */
     private $currentVar = [];
-
-    /**
-     * @var string Given input that will be parsed.
-     */
-    private $input;
 
     /**
      * @var Htpl Current Htpl instance.
@@ -163,95 +154,6 @@ class VarLexer
     }
 
     /**
-     * Tokenizes the given line.
-     *
-     * @param string $line   Current line.
-     * @param int    $number Line number.
-     * @param int    $offset Token offset.
-     *
-     * @return array|bool
-     */
-    private function tokenize($line, $number, $offset)
-    {
-        $string = substr($line, $offset);
-
-        foreach (static::$_terminals as $pattern => $name) {
-            if (preg_match($pattern, $string, $matches)) {
-                return array(
-                    'match' => $matches[1],
-                    'token' => $name,
-                    'line'  => $number + 1
-                );
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Moves the cursor to the next token.
-     */
-    private function moveCursor()
-    {
-        array_shift($this->parts);
-    }
-
-    /**
-     * Get the current token name.
-     *
-     * @return string|bool Current token name, or false if there are no tokens.
-     */
-    private function currentToken()
-    {
-        return isset($this->parts[0]) ? $this->parts[0]['token'] : false;
-    }
-
-    /**
-     * Get the value of current token.
-     *
-     * @return string|bool Current token value, or false if there no tokens.
-     */
-    private function currentValue()
-    {
-        return isset($this->parts[0]) ? $this->parts[0]['match'] : false;
-    }
-
-    /**
-     * Moves the cursor so it skips all the whitespace tokens.
-     */
-    private function skipWhitespace()
-    {
-        while ($this->currentToken() == self::T_WHITESPACE) {
-            $this->moveCursor();
-        }
-    }
-
-    /**
-     * Counts the number of remaining tokens.
-     *
-     * @return int Current token count.
-     */
-    private function countParts()
-    {
-        return count($this->parts);
-    }
-
-    /**
-     * Joins the remaining parts into a string.
-     *
-     * @return string
-     */
-    private function joinParts()
-    {
-        $str = '';
-        foreach ($this->parts as $p) {
-            $str .= $p['match'];
-        }
-
-        return $str;
-    }
-
-    /**
      * Builds the variables for the current parts.
      *
      * @return string
@@ -260,7 +162,6 @@ class VarLexer
     private function lexVariables()
     {
         $variables = [];
-        $inputString = $this->joinParts();
         do {
             $this->lexVariable();
             $this->lexMathOperator();
@@ -345,7 +246,6 @@ class VarLexer
         if ($this->currentToken() != self::MOD_SEPARATOR) {
             // check how many tokens we have left, either return the var, or issue a warning
             if ($this->countParts() > 0) {
-                //throw new HtplException('Unable to parse variable near ' . $this->joinParts());
                 return true;
             } else {
                 return false;

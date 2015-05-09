@@ -4,6 +4,8 @@ namespace Webiny\Htpl\Processor;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
+use Webiny\Htpl\Processor\Lexers\TagLexer;
+use Webiny\Htpl\Processor\Lexers\VarLexer;
 
 class Compiler
 {
@@ -106,15 +108,15 @@ class Compiler
                     $contextStart = '';
                     $contextEnd = '';
                     if (isset($result['contexts'])) {
-                        foreach($result['contexts'] as $c){
-                            $contextStart.= '<!-- htpl-context-start:'.$c.' -->'."\n";
-                            $contextEnd.= '<!-- htpl-context-end:'.$c.' -->'."\n";
+                        foreach ($result['contexts'] as $c) {
+                            $contextStart .= '<!-- htpl-context-start:' . $c . ' -->' . "\n";
+                            $contextEnd .= '<!-- htpl-context-end:' . $c . ' -->' . "\n";
                         }
                     }
 
                     // do the replacement
                     if (isset($result['content'])) {
-                        $replacement = $contextStart.$result['openingTag'] . $result['content'] . $result['closingTag'].$contextEnd;
+                        $replacement = $contextStart . $result['openingTag'] . $result['content'] . $result['closingTag'] . $contextEnd;
 
                         // we replace with offset 1 cause, we always do the replacement on the current template instance
                         $template = str_replace($currentMatch['outerHtml'], $replacement, $template);
@@ -132,58 +134,7 @@ class Compiler
 
         $template = $this->adjustContexts($template);
 
-        //@todo parse the contexts -> done
-        //@todo prepisi layout tree na novi lexer
-        //@todo rename current lexer to VarLexer, so we can distiguish between the two lexers -> done
-
-        /*
-        // parse functions
-        foreach ($functions as $tag => $callback) {
-            $matches = Selector::select($template, '//' . $tag);
-            if (count($matches) > 0) {
-                foreach ($matches as $m) {
-
-                    // do a fresh match, since some of the tags (eg. w-list) can modify the attributes
-                    $currentMatch = Selector::select($template, '(//' . $tag . ')[1]')[0];
-
-                    $content = $currentMatch['content'];
-                    $attributes = isset($currentMatch['attributes']) ? $currentMatch['attributes'] : [];
-
-                    // extract the opening and closing tag
-                    $outerContent = str_replace($currentMatch['content'], '', $currentMatch['outerHtml']);
-                    $closingTag = '</' . $tag . '>';
-                    $openingTag = str_replace($closingTag, '', $outerContent);
-
-                    // process the function callback
-                    try {
-                        $instance = new $callback;
-                        $result = $instance->parseTag($content, $attributes, $this->htpl);
-                    } catch (HtplException $e) {
-                        throw new HtplException('Htpl in unable to parse your template near: ' . $openingTag . "\n\n " . $e->getMessage());
-                    }
-
-                    if (!$result) {
-                        continue;
-                    }
-
-                    // do the replacement
-                    if (isset($result['content'])) {
-                        $replacement = $result['openingTag'] . $result['content'] . $result['closingTag'];
-                        // we replace with offset 1 cause, we always do the replacement on the current template instance
-                        $template = Selector::replace($template, '(//' . $tag . ')[1]', $replacement);
-                    } else {
-                        $template = str_replace($openingTag, $result['openingTag'], $template);
-                        if (isset($result['closingTag'])) {
-                            $template = str_replace($closingTag, $result['closingTag'], $template);
-                        }
-                    }
-                }
-            }
-        }
-        */
-
-        // tidy the output
-        return Selector::outputCleanup($template);
+        return $template;
     }
 
     private function adjustContexts($template)
@@ -196,24 +147,25 @@ class Compiler
             foreach ($contexts as $c) {
 
                 // get the context borders
-                $pattern = '/\<\!\-\- htpl\-context\-start\:'.$c.'-->([\S\s]+?)\<\!\-\- htpl\-context\-end\:'.$c.'-->/';
+                $pattern = '/\<\!\-\- htpl\-context\-start\:' . $c . '-->([\S\s]+?)\<\!\-\- htpl\-context\-end\:' . $c . '-->/';
                 preg_match($pattern, $template, $matches);
 
-                if(count($matches)>0){
+                if (count($matches) > 0) {
                     $contextTpl = $matches[1];
                     // match a get var function and adjust the context
                     // $this->getVar('postId', $this->vars)
-                    preg_match_all('/\$this->getVar\(\'' . trim($c) . '(\'|\.[\s\S]+?)\, \$this->vars\)/', $contextTpl, $varMatches);
+                    preg_match_all('/\$this->getVar\(\'' . trim($c) . '(\'|\.[\s\S]+?)\, \$this->vars\)/', $contextTpl,
+                        $varMatches);
 
                     if (count($varMatches[0]) > 0) {
                         foreach ($varMatches[0] as $offset => $m) {
-                            if($varMatches[1][$offset]=="'"){
+                            if ($varMatches[1][$offset] == "'") {
                                 // if the context var is accessed directly, without the inner context (the dot)
-                                $newContext = '$'.trim($c);
-                            }else{
+                                $newContext = '$' . trim($c);
+                            } else {
                                 // adjust the context
                                 $newContext = str_replace('$this->vars', '$' . trim($c), $m);
-                                $newContext = str_replace("'".trim($c).'.', "'", $newContext);
+                                $newContext = str_replace("'" . trim($c) . '.', "'", $newContext);
                             }
 
                             $contextTpl = str_replace($m, $newContext, $contextTpl);

@@ -5,7 +5,6 @@ namespace Webiny\Htpl\Functions;
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 use Webiny\Htpl\Processor\OutputWrapper;
-use Webiny\Htpl\Processor\Selector;
 
 class WList implements FunctionInterface
 {
@@ -39,17 +38,11 @@ class WList implements FunctionInterface
         if (!isset($attributes['items']) || empty($attributes['items'])) {
             throw new HtplException($this->getTag() . ' function requires `items` attribute to be defined.');
         }
+        $items = OutputWrapper::getVar($attributes['items']);
 
-        // item attribute
+        // var attribute
         if (!isset($attributes['var']) || empty($attributes['var'])) {
             throw new HtplException($this->getTag() . ' function requires `var` attribute to be defined.');
-        }
-
-        $currentContext = isset($attributes['context']) ? $attributes['context'] : null;
-        if (is_null($currentContext)) {
-            $items = OutputWrapper::getVar($attributes['items']);
-        } else {
-            $items = OutputWrapper::getVar($attributes['items'], $currentContext, true);
         }
 
         // key attribute

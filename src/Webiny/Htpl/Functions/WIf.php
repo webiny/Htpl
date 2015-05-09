@@ -79,7 +79,6 @@ class WIf implements FunctionInterface
         if (count($matches[0]) > 0) {
             $countOffset = 0;
             foreach ($matches[0] as $m) {
-                //print_r($m);
                 if (!in_array($m[0], $testFunctions) && !in_array($m[0], $protectedVarNames)) {
                     if (isset($vars[$m[0]])) {
                         $var = $vars[$m[0]];

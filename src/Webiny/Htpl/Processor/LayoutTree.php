@@ -3,6 +3,7 @@
 namespace Webiny\Htpl\Processor;
 
 use Webiny\Htpl\Loaders\LoaderInterface;
+use Webiny\Htpl\Processor\Lexers\TagLexer;
 
 class LayoutTree
 {
@@ -14,53 +15,41 @@ class LayoutTree
 
     private function processLayouts(LoaderInterface $loader, $templateName)
     {
-        // prepare the main template
         $source = $loader->getSource($templateName);
-        $source = Selector::prepare($source);
-        $layouts = Selector::select($source, '//w-layout');
+        $layouts = TagLexer::parse($source)->select('w-layout');
+
         foreach ($layouts as $l) {
             // get and prepare the parent
             $parentSource = $loader->getSource($l['attributes']['template']);
-            $parentSource = Selector::prepare($parentSource);
 
             $layoutSource = $this->joinLayouts($loader, $l['content'], $parentSource, 0);
-            $source = Selector::replace($source, "//w-layout[@template='" . $l['attributes']['template'] . "']",
-                $layoutSource . "\n");
-        }
-
-        // cleanup the remaining blocks
-        $blocks = Selector::select($source, '//w-block');
-        foreach ($blocks as $b) {
-            $source = Selector::replace($source, "//w-block[@name='" . $b['attributes']['name'] . "']",
-                $b['content'] . "\n");
+            $source = str_replace($l['outerHtml'], $layoutSource, $source);
         }
 
         return $source;
     }
 
-    private function joinLayouts(LoaderInterface $loader, $childSource, $parentSource, $i)
+    private function joinLayouts(LoaderInterface $loader, $childSource, $parentSource)
     {
         // take the blocks from child
-        $childBlocks = Selector::select($childSource, '//w-block');
+        $childBlocks = TagLexer::parse($childSource)->select('w-block');
+
+        $parentSourceLexed = TagLexer::parse($parentSource);
 
         // replace the matching blocks
         foreach ($childBlocks as $cb) {
-            $parentSource = Selector::replace($parentSource, "//w-block[@name='" . $cb['attributes']['name'] . "']",
-                $cb['content'] . "\n");
+            $parentBlock = $parentSourceLexed->select('w-block', ['name' => $cb['attributes']['name']])[0]['outerHtml'];
+            $parentSource = str_replace($parentBlock, $cb['content'], $parentSource);
         }
 
         // get the parent layout and repeat the process
         $source = $parentSource;
-        $layouts = Selector::select($source, '//w-layout');
-        if (count($layouts) > 0) {
-            foreach ($layouts as $l) {
-                $parentSource = $loader->getSource($l['attributes']['template']);
-                $parentSource = Selector::prepare($parentSource);
+        $layouts = TagLexer::parse($source)->select('w-layout');
+        foreach ($layouts as $l) {
+            $parentSource = $loader->getSource($l['attributes']['template']);
 
-                $layoutSource = $this->joinLayouts($loader, $l['content'], $parentSource, 1);
-                $source = Selector::replace($source, "//w-layout[@template='" . $l['attributes']['template'] . "']",
-                    $layoutSource . "\n");
-            }
+            $layoutSource = $this->joinLayouts($loader, $l['content'], $parentSource, 1);
+            $source = str_replace($l['outerHtml'], $layoutSource, $source);
         }
 
         return $source;
