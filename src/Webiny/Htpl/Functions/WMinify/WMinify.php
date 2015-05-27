@@ -1,15 +1,15 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Functions\WMinify;
-
-use Webiny\Htpl\Htpl;
-use Webiny\Htpl\HtplException;
 
 /**
  * Class WMinify.
  *
- * This is the default minify class that uses simple parsers to minify and concatenate your javascript and css files.
- * The class uses the filesystem to read and write the minified files.
+ * This is the default minify driver that uses simple parsers to minify and concatenate your javascript and css files.
  *
  * @package Webiny\Htpl\Functions\WMinify
  */
@@ -31,12 +31,13 @@ class WMinify extends WMinifyAbstract
 
         // check the cache
         foreach ($files as $f) {
-            $modTime = $this->getWriter()->createdOn($f);
+            $modTime = $this->getProvider()->createdOn($f);
             $cacheKeyParts[] = $f . '-' . $modTime;
         }
-        $cacheKey = 'htpl.' . md5(implode('', $files)) . '.min.css';
 
-        $minifiedFile = $this->getWriter()->getFilePath($cacheKey);
+        $cacheKey = 'htpl.' . md5(implode('', $cacheKeyParts)) . '.min.css';
+
+        $minifiedFile = $this->getCache()->getFilePath($cacheKey);
         if ($minifiedFile != false) {
             $minifiedFileData = explode(DIRECTORY_SEPARATOR, $minifiedFile);
             return $this->getWebRoot() . end($minifiedFileData);
@@ -44,7 +45,7 @@ class WMinify extends WMinifyAbstract
 
         // agregate and parse the files
         foreach ($files as $f) {
-            $content = $this->getLoader()->getSource($f);
+            $content = $this->getProvider()->getSource($f);
 
             if (substr($f, -7) != 'min.css') {
                 // parse "import tags"
@@ -54,7 +55,7 @@ class WMinify extends WMinifyAbstract
                     $importLoop = 0;
                     foreach ($imports[3] as $importCss) {
                         $path = $this->relativeUrlToAbsolute($importCss . '.css', $f);
-                        $importContent = $this->getLoader()->getSource($path);
+                        $importContent = $this->getProvider()->getSource($path);
 
                         $content = str_replace($imports[0][$importLoop], $importContent, $content);
 
@@ -93,7 +94,7 @@ class WMinify extends WMinifyAbstract
         }
 
         // write the minified file and return the path
-        $minifiedFile = $this->getWriter()->write($cacheKey, $minifiedFileContent);
+        $minifiedFile = $this->getCache()->write($cacheKey, $minifiedFileContent);
 
         $minifiedFileData = explode(DIRECTORY_SEPARATOR, $minifiedFile);
         return $this->getWebRoot() . end($minifiedFileData);
@@ -115,12 +116,12 @@ class WMinify extends WMinifyAbstract
 
         // check the cache
         foreach ($files as $f) {
-            $modTime = $this->getWriter()->createdOn($f);
+            $modTime = $this->getProvider()->createdOn($f);
             $cacheKeyParts[] = $f . '-' . $modTime;
         }
         $cacheKey = 'htpl.' . md5(implode('', $cacheKeyParts)) . '.min.js';
 
-        $minifiedFile = $this->getWriter()->getFilePath($cacheKey);
+        $minifiedFile = $this->getCache()->getFilePath($cacheKey);
         if ($minifiedFile != false) {
             $minifiedFileData = explode(DIRECTORY_SEPARATOR, $minifiedFile);
             return $this->getWebRoot() . end($minifiedFileData);
@@ -128,7 +129,7 @@ class WMinify extends WMinifyAbstract
 
         // aggregate and parse the files
         foreach ($files as $f) {
-            $content = $this->getLoader()->getSource($f);
+            $content = $this->getProvider()->getSource($f);
             // check if we need to minify the file
             if (substr($f, -6) != 'min.js') {
                 // minify
@@ -142,12 +143,20 @@ class WMinify extends WMinifyAbstract
         }
 
         // write the minified file and return the path
-        $minifiedFile = $this->getWriter()->write($cacheKey, $minifiedFileContent);
+        $minifiedFile = $this->getCache()->write($cacheKey, $minifiedFileContent);
 
         $minifiedFileData = explode(DIRECTORY_SEPARATOR, $minifiedFile);
         return $this->getWebRoot() . end($minifiedFileData);
     }
 
+    /**
+     * Transforms the relative url to absolute.
+     *
+     * @param string $rel  The relative url.
+     * @param string $base Base for the transformation.
+     *
+     * @return string
+     */
     protected function relativeUrlToAbsolute($rel, $base)
     {
         // extract the base path without the filename

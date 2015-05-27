@@ -1,9 +1,14 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Processor\Lexers;
 
 /**
- * Class AbstractLexer
+ * Abstract Lexer -> every lexer needs to extend this class.
+ *
  * @package Webiny\Htpl\Processor\Lexers
  */
 abstract class AbstractLexer

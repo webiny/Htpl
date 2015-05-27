@@ -1,13 +1,31 @@
 <?php
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
+namespace Webiny\Htpl\Cache;
 
-namespace Webiny\Htpl\Writer;
-
-class Filesystem implements WriterInterface
+/**
+ * Filesystem cache.
+ * Used for writing cache (and sometimes minify) files to the disk.
+ *
+ * @package Webiny\Htpl\Writer
+ */
+class FilesystemCache implements CacheInterface
 {
 
+    /**
+     * @var string Root directory where the files should be written.
+     */
     private $writerDir;
 
 
+    /**
+     * Base constructor.
+     *
+     * @param string $writerDir Root directory where the files should be written.
+     */
     public function __construct($writerDir)
     {
         $this->writerDir = rtrim($writerDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
@@ -120,6 +138,14 @@ class Filesystem implements WriterInterface
         return rtrim($path) . DIRECTORY_SEPARATOR . $file;
     }
 
+    /**
+     * Return the filename for the given file.
+     * This writer class modifies the filename by creating an md5 hash of the given destination file.
+     *
+     * @param string $file
+     *
+     * @return string
+     */
     private function getFilename($file)
     {
         $extData = explode('.', $file);

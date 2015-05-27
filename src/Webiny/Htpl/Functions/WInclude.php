@@ -1,14 +1,22 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Functions;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 use Webiny\Htpl\Processor\OutputWrapper;
 
+/**
+ * WInclude function.
+ *
+ * @package Webiny\Htpl\Functions
+ */
 class WInclude implements FunctionInterface
 {
-
     /**
      * Return the html tag that the function is attached to.
      *
@@ -34,22 +42,20 @@ class WInclude implements FunctionInterface
      */
     public function parseTag($content, $attributes, Htpl $htpl)
     {
-        // content
         if (!isset($attributes['file'])) {
-            return false;
+            throw new HtplException('w-include must have a "file" attribute defined.');
         }
+
+        $callback = 'Webiny\Htpl\Functions\WInclude::htpl';
 
         // get the include callback
         if (substr($attributes['file'], -5) == '.htpl') {
-            $callback = 'Webiny\Htpl\Functions\WInclude::htpl';
-        } else if (substr($attributes['file'], -5) == '.html') {
-            $callback = 'Webiny\Htpl\Functions\WInclude::html';
+            $callback .= '("' . $attributes['file'] . '", $this->getHtplInstance())';
         } else {
             // treat as variable
-            $callback = 'Webiny\Htpl\Functions\WInclude::dynamic';
+            $attributes['file'] = OutputWrapper::getVar($attributes['file']);
+            $callback .= '(' . $attributes['file'] . ', $this->getHtplInstance())';
         }
-
-        $callback .= '("' . $attributes['file'] . '", $this->getHtplInstance())';
 
         return [
             'openingTag' => '',
@@ -58,39 +64,22 @@ class WInclude implements FunctionInterface
         ];
     }
 
+    /**
+     * Static callback that includes a Htpl template.
+     *
+     * @param string $file Path to the Htpl template.
+     * @param Htpl   $htpl Current Htpl instance.
+     *
+     * @throws HtplException
+     */
     public static function htpl($file, Htpl $htpl)
     {
-        $path = self::resolveIncludePath($file, $htpl);
-
-        $htpl->render(str_replace($htpl->getTemplateDir(), '', $path));
-    }
-
-    public static function html($file, Htpl $htpl)
-    {
-        $path = self::resolveIncludePath($file, $htpl);
-
-        echo file_get_contents($path);
-    }
-
-    public static function dynamic($file, Htpl $htpl)
-    {
-        die('dynamic:' . $file);
-    }
-
-    private static function resolveIncludePath($file, Htpl $htpl)
-    {
-        // check if absolute or relative path
-        if ($file[0] != DIRECTORY_SEPARATOR && $file[1] != ':') {
-            $fullPath = $htpl->getTemplateDir() . $htpl->getTemplate();
-            $path = realpath(dirname($fullPath) . DIRECTORY_SEPARATOR . dirname($file) . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . basename($file);
-        } else {
-            $path = realpath($htpl->getTemplateDir() . $file);
+        // only htpl templates are allowed
+        if (substr($file, -5) != '.htpl') {
+            throw new HtplException(sprintf('Failed to include %s. Only .htpl templates can be included.', $file));
         }
 
-        if (!$path) {
-            throw new HtplException(sprintf('Unable to include "%s" since file doesn\'t exist', $file));
-        }
-
-        return $path;
+        // use the same htpl instance so we benefit from the internal cache and already initialized provider
+        $htpl->display($file);
     }
 }

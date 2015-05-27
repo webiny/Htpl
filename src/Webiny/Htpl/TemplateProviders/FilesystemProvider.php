@@ -1,36 +1,78 @@
 <?php
-
-namespace Webiny\Htpl\Loaders;
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
+namespace Webiny\Htpl\TemplateProviders;
 
 use Webiny\Htpl\HtplException;
 
-class Filesystem implements LoaderInterface
+/**
+ * FilesystemTemplateProvider
+ *
+ * @package Webiny\Htpl\TemplateProviders
+ */
+class FilesystemProvider implements TemplateProviderInterface
 {
+    /**
+     * @var array List of paths form where the templates will be loaded.
+     */
     private $paths = [];
+
+    /**
+     * @var array Internal cache.
+     */
     private $cache = [];
 
+
+    /**
+     * Base constructor.
+     *
+     * @param array $paths List of paths form where the templates will be loaded.
+     */
     public function __construct(array $paths)
     {
         $this->setPaths($paths);
     }
 
+    /**
+     * Append an additional path to the list of paths.
+     *
+     * @param string $path Path to append.
+     */
     public function appendPath($path)
     {
         $this->paths[] = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     }
 
+    /**
+     * Prepend a path.
+     *
+     * @param string $path Path to prepend.
+     */
     public function prependPath($path)
     {
         array_unshift($this->paths, rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
     }
 
+    /**
+     * Append multiple paths.
+     *
+     * @param array $paths List of paths to append.
+     */
     public function setPaths(array $paths)
     {
         foreach ($paths as $p) {
-            $this->paths[] = rtrim($p, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+            $this->paths[] = $this->appendPath($p);
         }
     }
 
+    /**
+     * Get the list of registered paths.
+     *
+     * @return array
+     */
     public function getPaths()
     {
         return $this->paths;

@@ -1,12 +1,21 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Functions\WMinify;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
-use Webiny\Htpl\Loaders\LoaderInterface;
-use Webiny\Htpl\Writer\WriterInterface;
+use Webiny\Htpl\Cache\CacheInterface;
+use Webiny\Htpl\TemplateProviders\TemplateProviderInterface;
 
+/**
+ * WMinify abstract class -> all WMinify drivers must extend this class.
+ *
+ * @package Webiny\Htpl\Functions\WMinify
+ */
 abstract class WMinifyAbstract
 {
 
@@ -16,14 +25,14 @@ abstract class WMinifyAbstract
     private $htpl;
 
     /**
-     * @var LoaderInterface
+     * @var TemplateProviderInterface
      */
-    private $loader;
+    private $provider;
 
     /**
-     * @var WriterInterface
+     * @var CacheInterface
      */
-    private $writer;
+    private $cache;
 
     /**
      * @var string
@@ -64,6 +73,8 @@ abstract class WMinifyAbstract
     }
 
     /**
+     * Get the current Htpl instance.
+     *
      * @return Htpl
      */
     public function getHtpl()
@@ -72,14 +83,14 @@ abstract class WMinifyAbstract
     }
 
     /**
-     * @return LoaderInterface
+     * @return TemplateProviderInterface
      * @throws HtplException
      */
-    public function getLoader()
+    public function getProvider()
     {
 
-        if (is_object($this->loader)) {
-            return $this->loader;
+        if (is_object($this->provider)) {
+            return $this->provider;
         }
 
         $options = $this->getHtpl()->getOptions()['minify'];
@@ -87,26 +98,26 @@ abstract class WMinifyAbstract
             throw new HtplException('Missing options for w-minify function.');
         }
 
-        $loader = $options['loader'];
-        if (empty($loader)) {
-            throw new HtplException('The loader is not defined for w-minify function.');
+        $provider = $options['provider'];
+        if (empty($provider)) {
+            throw new HtplException('The provider is not defined for w-minify function.');
         }
 
-        if (!is_object($loader)) {
-            throw new HtplException('w-minify loader should be an instance of Webiny\Htpl\Loaders\LoaderInterface.');
+        if (!is_object($provider)) {
+            throw new HtplException('w-minify provider should be an instance of Webiny\Htpl\TemplateProviders\TemplateProvidersInterface.');
         }
 
-        return $this->loader = $loader;
+        return $this->provider = $provider;
     }
 
     /**
-     * @return WriterInterface
+     * @return CacheInterface
      * @throws HtplException
      */
-    public function getWriter()
+    public function getCache()
     {
-        if (is_object($this->writer)) {
-            return $this->writer;
+        if (is_object($this->cache)) {
+            return $this->cache;
         }
 
         $options = $this->getHtpl()->getOptions()['minify'];
@@ -114,18 +125,24 @@ abstract class WMinifyAbstract
             throw new HtplException('Missing options for w-minify function.');
         }
 
-        $writer = $options['writer'];
-        if (empty($writer)) {
-            throw new HtplException('The writer is not defined for w-minify function.');
+        $cache = $options['cache'];
+        if (empty($cache)) {
+            throw new HtplException('Cache is not defined for w-minify function.');
         }
 
-        if (!is_object($writer)) {
-            throw new HtplException('w-minify writer should be an instance of Webiny\Htpl\Loaders\LoaderInterface.');
+        if (!is_object($cache)) {
+            throw new HtplException('w-minify cache should be an instance of Webiny\Htpl\Cache\CacheInterface.');
         }
 
-        return $this->writer = $writer;
+        return $this->cache = $cache;
     }
 
+    /**
+     * Get the defined web root.
+     *
+     * @return string
+     * @throws HtplException
+     */
     public function getWebRoot()
     {
         if (!empty($this->webRoot)) {

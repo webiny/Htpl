@@ -1,11 +1,20 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Functions;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 use Webiny\Htpl\Processor\OutputWrapper;
 
+/**
+ * WIf function.
+ *
+ * @package Webiny\Htpl\Functions
+ */
 class WIf implements FunctionInterface
 {
     /**
@@ -47,11 +56,17 @@ class WIf implements FunctionInterface
         ];
     }
 
+    /**
+     * Parses the conditions and returns a compiled PHP string to execute the conditions.
+     *
+     * @param string $conditions A string of conditions.
+     *
+     * @return string
+     */
     protected function parseConditions($conditions)
     {
         // extract the strings
-        preg_match_all('/([\'])([A-z][A-z\.0-9]+)\1/', $conditions, $matches, PREG_OFFSET_CAPTURE);
-
+        preg_match_all('/([\'])([A-z]?[A-z\.0-9]+)\1/', $conditions, $matches, PREG_OFFSET_CAPTURE);
 
         $vars = [];
         if (count($matches[0]) > 0) {
@@ -74,7 +89,7 @@ class WIf implements FunctionInterface
         $protectedVarNames = ['false', 'true', 'null'];
 
         // extract the variables
-        preg_match_all('/([A-z][\w\.]+)/', $conditions, $matches, PREG_OFFSET_CAPTURE);
+        preg_match_all('/([A-z][\w\.]+|[A-z]+)/', $conditions, $matches, PREG_OFFSET_CAPTURE);
 
         if (count($matches[0]) > 0) {
             $countOffset = 0;

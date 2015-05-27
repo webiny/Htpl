@@ -1,11 +1,20 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Functions;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 use Webiny\Htpl\Processor\OutputWrapper;
 
+/**
+ * WElse function.
+ *
+ * @package Webiny\Htpl\Functions
+ */
 class WElse implements FunctionInterface
 {
     /**

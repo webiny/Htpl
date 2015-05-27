@@ -1,11 +1,20 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Functions;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 use Webiny\Htpl\Processor\OutputWrapper;
 
+/**
+ * WMinify function.
+ *
+ * @package Webiny\Htpl\Functions
+ */
 class WMinify implements FunctionInterface
 {
     /**
@@ -62,6 +71,16 @@ class WMinify implements FunctionInterface
         }
     }
 
+    /**
+     * Static callback that does the minification.
+     * The method is called from within the compiled template.
+     *
+     * @param array  $files List of files that need to minified.
+     * @param string $type  Is it a js or a css minification in question.
+     * @param Htpl   $htpl  Current htpl instance.
+     *
+     * @throws HtplException
+     */
     public static function minifyCallback($files, $type, Htpl $htpl)
     {
         // get minify driver instance
@@ -81,10 +100,10 @@ class WMinify implements FunctionInterface
 
         if ($type == 'js') {
             $minifiedFile = $driver->minifyJavaScript($files);
-            echo '<script type="text/javascript" src="' . $minifiedFile . '"></script>';
+            echo '<script type="text/javascript" src="' . $minifiedFile . '"/>';
         } else if ($type == 'css') {
             $minifiedFile = $driver->minifyCss($files);
-            echo '<link rel="stylesheet" href="' . $minifiedFile . '"></link>';
+            echo '<link rel="stylesheet" href="' . $minifiedFile . '"/>';
         } else {
             throw new HtplException(sprintf('Unknown $type value for minify callback: %s', $type));
         }

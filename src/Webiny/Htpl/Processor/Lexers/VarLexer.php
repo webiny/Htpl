@@ -1,10 +1,20 @@
 <?php
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Processor\Lexers;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 use Webiny\Htpl\Processor\OutputWrapper;
 
+/**
+ * VarLexer parses the variables.
+ *
+ * @package Webiny\Htpl\Processor\Lexers
+ */
 class VarLexer extends AbstractLexer
 {
     // general types
@@ -480,9 +490,9 @@ class VarLexer extends AbstractLexer
         } else if ($param['type'] == 'array') {
             $arrayParams = [];
             foreach ($param['value'] as $a) {
-                if(isset($a['key'])){
+                if (isset($a['key'])) {
                     $arrayParams[] = $this->outputParameter($a['key']) . '=>' . $this->outputParameter($a['value']);
-                }else{
+                } else {
                     $arrayParams[] = $this->outputParameter($a['value']);
                 }
             }

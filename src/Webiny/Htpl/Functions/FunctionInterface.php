@@ -1,12 +1,23 @@
 <?php
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Functions;
 
 use Webiny\Htpl\Htpl;
 
+/**
+ * Function Interface -> all functions must implement this interface.
+ *
+ * @package Webiny\Htpl\Functions
+ */
 interface FunctionInterface
 {
     /**
      * Return the html tag that the function is attached to.
+     * Note: the tag **must** start with 'w-', otherwise it won't get parsed.
      *
      * @return string
      */

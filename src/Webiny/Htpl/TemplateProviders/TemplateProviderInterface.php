@@ -1,14 +1,18 @@
 <?php
-
-namespace Webiny\Htpl\Loaders;
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
+namespace Webiny\Htpl\TemplateProviders;
 
 /**
- * Loader reads the source template contents.
+ * Provider retrieves the template source file.
  *
- * Interface LoaderInterface
- * @package Webiny\Htpl\Loaders
+ * Interface TemplateProviderInterface
+ * @package Webiny\Htpl\TemplateProviders
  */
-interface LoaderInterface
+interface TemplateProviderInterface
 {
     /**
      * Get template source based on the provided $name.

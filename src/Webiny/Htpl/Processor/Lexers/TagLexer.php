@@ -1,9 +1,20 @@
 <?php
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Processor\Lexers;
 
 use Webiny\Htpl\HtplException;
 use Webiny\Htpl\Processor\LexedTemplate;
 
+/**
+ * TagLexer parses the html tags.
+ * Note: not all html tags are parsed, only the ones starting with 'w-'.
+ *
+ * @package Webiny\Htpl\Processor\Lexers
+ */
 class TagLexer extends AbstractLexer
 {
     // general types
@@ -107,6 +118,12 @@ class TagLexer extends AbstractLexer
 
     }
 
+    /**
+     * Perform the tag parsing.
+     *
+     * @return array An array of parsed tags.
+     * @throws HtplException
+     */
     private function lexTags()
     {
         do {
@@ -119,6 +136,12 @@ class TagLexer extends AbstractLexer
         return $this->tags;
     }
 
+    /**
+     * Parse a single tag.
+     *
+     * @return array|bool Tag details, or false if it cannot be parsed.
+     * @throws HtplException
+     */
     private function lexTag()
     {
         $start = $this->countParts();
@@ -166,17 +189,25 @@ class TagLexer extends AbstractLexer
         if ($this->currentToken() != self::TAG_SELF_CLOSE) {
             $this->moveCursor();// move the TAG_CLOSE
             $content = $this->lexTagContent($name);
+            $outerContent = $openingTag . $content . '</' . $name . '>';
+        } else {
+            $outerContent = $openingTag;
         }
-
 
         return [
             'name'       => $name,
             'content'    => $content,
             'attributes' => $parameters,
-            'outerHtml'  => $openingTag . $content . '</' . $name . '>'
+            'outerHtml'  => $outerContent
         ];
     }
 
+    /**
+     * Parse the tag name.
+     *
+     * @return bool|string
+     * @throws HtplException
+     */
     private function lexTagName()
     {
         if ($this->currentToken() != self::T_STRING) {
@@ -190,6 +221,12 @@ class TagLexer extends AbstractLexer
         return $name;
     }
 
+    /**
+     * Parse the tag parameters (attributes).
+     *
+     * @return array
+     * @throws HtplException
+     */
     private function lexTagParameters()
     {
         $parameters = [];
@@ -241,6 +278,14 @@ class TagLexer extends AbstractLexer
         return $parameters;
     }
 
+    /**
+     * Parse the tag internal content.
+     *
+     * @param string $tagName Tag name that is being parsed.
+     *
+     * @return string Internal content.
+     * @throws HtplException
+     */
     private function lexTagContent($tagName)
     {
         // quick check if we have a closing tag

@@ -1,14 +1,22 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\Functions;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
 use Webiny\Htpl\Processor\OutputWrapper;
 
-class WList implements FunctionInterface
+/**
+ * WLoop function.
+ *
+ * @package Webiny\Htpl\Functions
+ */
+class WLoop implements FunctionInterface
 {
-
     /**
      * Return the html tag that the function is attached to.
      *
@@ -16,7 +24,7 @@ class WList implements FunctionInterface
      */
     public function getTag()
     {
-        return 'w-list';
+        return 'w-loop';
     }
 
     /**
@@ -52,9 +60,9 @@ class WList implements FunctionInterface
         if (isset($attributes['key']) && !empty($attributes['key'])) {
             $contexts[] = $attributes['key'];
             $key = '$' . $attributes['key'];
-            $func = 'foreach (' . $items . ' as ' . $key . ' => ' . $var . '){ ';
+            $func = 'foreach (' . $items . ' as ' . $key . ' => ' . $var . '){';
         } else {
-            $func = 'foreach (' . $items . ' as ' . $var . '){ ';
+            $func = 'foreach (' . $items . ' as ' . $var . '){';
         }
 
 

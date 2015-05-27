@@ -1,15 +1,19 @@
 <?php
-
-namespace Webiny\Htpl\Writer;
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
+namespace Webiny\Htpl\Cache;
 
 /**
- * Writer is used to write different files to the disk, or cloud.
- * Typically used for writing the compiled template files and minify files.
+ * Cache is used to write different files to the disk, or the cloud.
+ * Typically used for saving compiled template files.
  *
- * Interface WriterInterface
+ * Interface CacheInterface
  * @package Webiny\Htpl\Writer
  */
-interface WriterInterface
+interface CacheInterface
 {
     /**
      * Writes the given content.
