@@ -48,14 +48,16 @@ class WInclude implements FunctionInterface
 
         $callback = 'Webiny\Htpl\Functions\WInclude::htpl';
 
-        // get the include callback
-        if (substr($attributes['file'], -5) == '.htpl') {
-            $callback .= '("' . $attributes['file'] . '", $this->getHtplInstance())';
-        } else {
-            // treat as variable
-            $attributes['file'] = OutputWrapper::getVar($attributes['file']);
-            $callback .= '(' . $attributes['file'] . ', $this->getHtplInstance())';
+        // check if variable is set
+        if (empty($htpl->getVars()[$attributes['file']])) {
+            throw new HtplException(sprintf('Cannot include a template file, variable "%s" is not defined.',
+                $attributes['file']));
         }
+
+        // treat as variable
+        // (direct file includes are processed in the layout tree)
+        $attributes['file'] = OutputWrapper::getVar($attributes['file']);
+        $callback .= '(' . $attributes['file'] . ', $this->getHtplInstance())';
 
         return [
             'openingTag' => '',
@@ -74,12 +76,14 @@ class WInclude implements FunctionInterface
      */
     public static function htpl($file, Htpl $htpl)
     {
+        // validate the variable value
         // only htpl templates are allowed
         if (substr($file, -5) != '.htpl') {
             throw new HtplException(sprintf('Failed to include %s. Only .htpl templates can be included.', $file));
         }
 
-        // use the same htpl instance so we benefit from the internal cache and already initialized provider
+        // use the same htpl instance so we benefit from the internal cache and already initialized provider and so we
+        // also pass the current assigned variables
         $htpl->display($file);
     }
 }

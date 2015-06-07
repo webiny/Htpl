@@ -1,4 +1,9 @@
 <?php
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\UnitTests\Cache;
 
 use Webiny\Htpl\Cache\ArrayCache;

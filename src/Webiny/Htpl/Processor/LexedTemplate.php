@@ -62,13 +62,13 @@ class LexedTemplate
             if ($t['name'] == $tag) {
                 if (count($attributes) > 0) {
                     foreach ($attributes as $k => $v) {
-                        if (!isset($t['attributes'][$k]) || $t['attributes'][$k] != $v) {
-                            continue;
+                        if (isset($t['attributes'][$k]) && $t['attributes'][$k] == $v) {
+                            $result[] = $t;
                         }
                     }
+                } else {
+                    $result[] = $t;
                 }
-
-                $result[] = $t;
             }
         }
 

@@ -1,8 +1,0 @@
-- you have child and parent
-- take the source form parent
-- take the blocks from the child
-- take the blocks from parent
-- replace the parent blocks inside parent source with the matching child blocks
-- unmatched child blocks are removed
-- unmatched parent blocks remain inside parent
-- always copy the blocks from child to parent

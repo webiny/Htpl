@@ -183,6 +183,7 @@ class VarLexer extends AbstractLexer
 
         $varComplete = '';
         foreach ($variables as $v) {
+
             foreach ($v as $type => $param) {
                 // variable name
                 if ($type == 'name') {

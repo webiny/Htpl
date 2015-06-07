@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\UnitTests\Functions;
 
 class WElseIfTest extends \PHPUnit_Framework_TestCase

@@ -1,4 +1,9 @@
 <?php
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\UnitTests\Functions;
 
 class WLoopTest extends \PHPUnit_Framework_TestCase
@@ -63,7 +68,8 @@ class WLoopTest extends \PHPUnit_Framework_TestCase
 
         // source check
         $result = $htpl->build('test')->getSource();
-        $expectedResult = '<?php foreach (' . \Webiny\Htpl\Processor\OutputWrapper::getVar('items') . ' as $var){ ?><li><?= $this->escape($var);?></li><?php } ?>';
+        $expectedResult = '<?php foreach (' . \Webiny\Htpl\Processor\OutputWrapper::getVar('items') . ' as $var){ ?><li><?php echo htmlspecialchars($var, ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\');?>'."\n";
+        $expectedResult.='</li><?php } ?>';
         $this->assertSame(trim($expectedResult), trim($result));
 
         // output check
@@ -81,7 +87,10 @@ class WLoopTest extends \PHPUnit_Framework_TestCase
         // source check
         $result = $htpl->build('test')->getSource();
         $expectedResult = '<?php foreach (' . \Webiny\Htpl\Processor\OutputWrapper::getVar('items') . ' as $key => $var)';
-        $expectedResult .= '{ ?><li><?= $this->escape($key);?>=><?= $this->escape($var);?></li><?php } ?>';
+        $expectedResult .= '{ ?><li><?php echo htmlspecialchars($key, ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\');?>'."\n";
+        $expectedResult .= '=><?php echo htmlspecialchars($var, ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\');?>'."\n";
+        $expectedResult .= '</li><?php } ?>';
+
         $this->assertSame(trim($expectedResult), trim($result));
 
         // output check

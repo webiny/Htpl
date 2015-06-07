@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\UnitTests\Mocks;
 
 class WMinifyMock extends \Webiny\Htpl\Functions\WMinify\WMinifyAbstract

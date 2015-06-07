@@ -1,4 +1,9 @@
 <?php
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\UnitTests\Functions;
 
 use Webiny\Htpl\UnitTests\Mocks\WMinifyMock;

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <w-include file="metaTags.htpl"/>
+
+    <w-block name="head">
+
+    </w-block>
+
+</head>
+<body>

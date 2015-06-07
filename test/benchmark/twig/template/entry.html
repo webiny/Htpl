@@ -1,0 +1,7 @@
+<ul>
+    {% for k,i in entry %}
+        {% if k=='name' or k=='id' or k=='item_order' %}
+            <li><strong>{{k}}:</strong> {{i}}</li>
+        {% endif %}
+    {% endfor %}
+</ul>

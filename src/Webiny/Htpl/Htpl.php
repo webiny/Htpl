@@ -36,7 +36,8 @@ class Htpl
             'varStartFlag' => '{',
             'varEndFlag'   => '}'
         ],
-        'minify'       => []
+        'minify'       => [],
+        'cacheValidationTTL'    => 60 // in seconds, how often should we check when cache was last validated
     ];
 
     /**
@@ -189,7 +190,6 @@ class Htpl
             $this->compiledTemplates[$template] = $compiler->getCompiledTemplate($template);
         }
 
-        // return
         return $this->compiledTemplates[$template];
     }
 
@@ -297,6 +297,7 @@ class Htpl
     /**
      * Set the start and end flag for marking variables.
      * Default flags are { }.
+     * NOTE: This is an EXPERIMENTAL feature.
      *
      * @param string $startFlag
      * @param string $endFlag

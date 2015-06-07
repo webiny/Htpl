@@ -1,7 +1,12 @@
 <?php
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\UnitTests\TemplateProviders;
 
-class ArrayProvider extends \PHPUnit_Framework_TestCase
+class ArrayProviderTest extends \PHPUnit_Framework_TestCase
 {
 
     public function testConstructor()

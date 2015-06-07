@@ -1,0 +1,7 @@
+<ul>
+    <w-loop items="entry" var="v" key="k">
+        <w-if cond="k=='name' || k=='id' || k=='item_order'">
+            <li><strong>{k}:</strong> {v}</li>
+        </w-if>
+    </w-loop>
+</ul>

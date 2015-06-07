@@ -1,0 +1,16 @@
+<w-include file="header.htpl" />
+
+<div class="center">
+    <w-block name="centerContent">
+
+    </w-block>
+</div>
+
+<div class="sidebar">
+    <w-block name="sidebarContent">
+
+    </w-block>
+</div>
+
+
+<w-include file="footer.htpl" />

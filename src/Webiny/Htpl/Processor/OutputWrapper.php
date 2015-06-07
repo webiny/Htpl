@@ -46,7 +46,7 @@ class OutputWrapper
      */
     public static function outputVar($var)
     {
-        return '<?= ' . $var . ';?>';
+        return '<?php echo ' . $var . ';?>'."\n";
     }
 
     /**
@@ -70,6 +70,6 @@ class OutputWrapper
      */
     public static function escape($val)
     {
-        return '$this->escape(' . $val . ')';
+        return 'htmlspecialchars('.$val.', ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\')';
     }
 }

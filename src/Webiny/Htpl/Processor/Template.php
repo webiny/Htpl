@@ -45,7 +45,9 @@ class Template
      */
     public function getVar($key, $context)
     {
-        if (strpos($key, '.') !== false) {
+        if (!empty($context[$key])) {
+            return $context[$key];
+        } else if (strpos($key, '.') !== false) {
             $keyData = explode('.', $key);
             $value = $context;
             foreach ($keyData as $kd) {
@@ -55,27 +57,11 @@ class Template
                     return null;
                 }
             }
-        } else {
-            if (!empty($context[$key])) {
-                $value = $context[$key];
-            } else {
-                return null;
-            }
+
+            return $value;
+        }else{
+            return null;
         }
-
-        return $value;
-    }
-
-    /**
-     * Escape callback.
-     *
-     * @param string $value Value that should be escaped.
-     *
-     * @return string
-     */
-    public function escape($value)
-    {
-        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'utf-8');
     }
 
     /**
@@ -94,11 +80,7 @@ class Template
      */
     public function display()
     {
-        // we need to assign the latest variables from within the htpl instance, just before we build the output
-        $this->vars = $this->getHtplInstance()->getVars();
-
-        // build the output
-        eval('?>' . $this->template);
+        echo $this->fetch();
     }
 
     /**
@@ -108,8 +90,11 @@ class Template
      */
     public function fetch()
     {
+        // we need to assign the latest variables from within the htpl instance, just before we build the output
+        $this->vars = $this->getHtplInstance()->getVars();
+
         ob_start();
-        $this->display();
+        eval('?>' . $this->template);
 
         return ob_get_clean();
     }

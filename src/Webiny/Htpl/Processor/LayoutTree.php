@@ -18,32 +18,35 @@ use Webiny\Htpl\Processor\Lexers\TagLexer;
  */
 class LayoutTree
 {
+    private $includedFiles = [];
+
     /**
      * Processes and returns the flattened template.
      *
-     * @param TemplateProviderInterface $loader
-     * @param string          $templateName
+     * @param TemplateProviderInterface $provider
+     * @param string                    $templateName
      *
-     * @return mixed|string
+     * @return Layout
      */
-    public static function getLayout(TemplateProviderInterface $loader, $templateName)
+    public static function getLayout(TemplateProviderInterface $provider, $templateName)
     {
         $layoutTree = new self;
-        return $layoutTree->processLayouts($loader, $templateName);
+        return $layoutTree->processLayouts($provider, $templateName);
     }
 
     /**
      * Reads and flattens the initial template.
      *
-     * @param TemplateProviderInterface $loader
-     * @param string          $templateName
+     * @param TemplateProviderInterface $provider
+     * @param string                    $templateName
      *
-     * @return string
+     * @return Layout
      * @throws \Webiny\Htpl\HtplException
      */
-    private function processLayouts(TemplateProviderInterface $loader, $templateName)
+    private function processLayouts(TemplateProviderInterface $provider, $templateName)
     {
-        $source = $loader->getSource($templateName);
+        $source = $provider->getSource($templateName);
+        $this->includedFiles[$templateName] = $provider->createdOn($templateName);
         $layouts = TagLexer::parse($source)->select('w-layout');
 
         foreach ($layouts as $l) {
@@ -51,34 +54,41 @@ class LayoutTree
             if (!isset($l['attributes']['template'])) {
                 throw new HtplException('A "w-layout" tag is missing the "template" attribute.');
             }
-            $parentSource = $loader->getSource($l['attributes']['template']);
+            $parentSource = $provider->getSource($l['attributes']['template']);
+            $this->includedFiles[$l['attributes']['template']] = $provider->createdOn($l['attributes']['template']);
 
-            $layoutSource = $this->joinLayouts($loader, $l['content'], $parentSource, 0);
-            //$source = str_replace($l['outerHtml'], $layoutSource, $source);
+            $layoutSource = $this->joinLayouts($provider, $l['content'], $parentSource, 0);
             $source = preg_replace('/(\s+|)' . preg_quote($l['outerHtml'], '/') . '(\s+|)/', $layoutSource, $source);
         }
 
+        // build the includes
+        $layout = $this->handleIncludes($provider, $source);
+        $source = $layout->getSource();
+
         // cleanup remaining (empty) blocks
         $blocks = TagLexer::parse($source)->select('w-block');
+
         foreach ($blocks as $b) {
             $source = preg_replace('/(\s+|)' . preg_quote($b['outerHtml'], '/') . '(\s+|)/', '', $source);
         }
+        $layout->setSource($source);
 
-        return $source;
+
+        return $layout;
     }
 
     /**
      * Recursive method that walks the template layout hierarchy tree and flattens all the templates, until there
      * are no more depths to go.
      *
-     * @param TemplateProviderInterface $loader
-     * @param string          $childSource
-     * @param string          $parentSource
+     * @param TemplateProviderInterface $provider
+     * @param string                    $childSource
+     * @param string                    $parentSource
      *
      * @return string
      * @throws \Webiny\Htpl\HtplException
      */
-    private function joinLayouts(TemplateProviderInterface $loader, $childSource, $parentSource)
+    private function joinLayouts(TemplateProviderInterface $provider, $childSource, $parentSource)
     {
         // take the blocks from child
         $childBlocks = TagLexer::parse($childSource)->select('w-block');
@@ -88,8 +98,8 @@ class LayoutTree
         // replace the matching blocks
         foreach ($childBlocks as $cb) {
             $parentBlock = $parentSourceLexed->select('w-block', ['name' => $cb['attributes']['name']])[0]['outerHtml'];
-            //$parentSource = str_replace($parentBlock, $cb['content'], $parentSource);
-            $parentSource = preg_replace('/(\s+|)' . preg_quote($parentBlock, '/') . '(\s+|)/', $cb['content'], $parentSource);
+            $parentSource = preg_replace('/(\s+|)' . preg_quote($parentBlock, '/') . '(\s+|)/', $cb['content'],
+                $parentSource);
         }
 
         // get the parent layout and repeat the process
@@ -99,13 +109,46 @@ class LayoutTree
             if (!isset($l['attributes']['template'])) {
                 throw new HtplException('A "w-layout" tag is missing the "template" attribute.');
             }
-            $parentSource = $loader->getSource($l['attributes']['template']);
+            $parentSource = $provider->getSource($l['attributes']['template']);
+            $this->includedFiles[$l['attributes']['template']] = $provider->createdOn($l['attributes']['template']);
 
-            $layoutSource = $this->joinLayouts($loader, $l['content'], $parentSource, 1);
-            //$source = str_replace($l['outerHtml'], $layoutSource, $source);
+            $layoutSource = $this->joinLayouts($provider, $l['content'], $parentSource, 1);
             $source = preg_replace('/(\s+|)' . preg_quote($l['outerHtml'], '/') . '(\s+|)/', $layoutSource, $source);
         }
 
         return $source;
+    }
+
+    /**
+     * Recursively handles the included templates (just the non dynamic ones).
+     *
+     * @param TemplateProviderInterface $provider
+     * @param                           $source
+     *
+     * @return Layout
+     * @throws HtplException
+     */
+    private function handleIncludes(TemplateProviderInterface $provider, $source)
+    {
+        $includes = TagLexer::parse($source)->select('w-include');
+
+        $parsedTemplates = 0;
+        foreach ($includes as $i) {
+            if (substr($i['attributes']['file'], -5) == '.htpl') {
+                // join the includes with the main template
+                $includedTemplate = $provider->getSource($i['attributes']['file']);
+                $source = preg_replace('/(\s+|)' . preg_quote($i['outerHtml'], '/') . '(\s+|)/', $includedTemplate,
+                    $source);
+                // add the template to include list
+                $this->includedFiles[$i['attributes']['file']] = $provider->createdOn($i['attributes']['file']);
+                $parsedTemplates++;
+            }
+        }
+
+        if (count($includes) < 1 || $parsedTemplates < 1) {
+            return new Layout($source, $this->includedFiles);
+        }
+
+        return $this->handleIncludes($provider, $source);
     }
 }

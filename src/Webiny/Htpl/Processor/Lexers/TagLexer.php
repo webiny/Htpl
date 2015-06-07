@@ -111,9 +111,7 @@ class TagLexer extends AbstractLexer
             return $this->lexTags();
         } catch (HtplException $e) {
             $this->skipWhitespace();
-            $currentLine = explode("\n", $this->joinParts());
-            throw new HtplException(sprintf('Error near %s.' . "\n",
-                $currentLine[0] . "\n" . $currentLine[1] . "\n" . $currentLine[2]), 0, $e);
+            throw new HtplException(sprintf('Error near %s.', substr($this->joinParts(), 0, 255)), 0, $e);
         }
 
     }

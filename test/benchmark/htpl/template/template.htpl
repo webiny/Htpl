@@ -1,0 +1,14 @@
+<w-layout template="master.htpl">
+    <w-block name="centerContent">
+        <div>
+
+            <p>Total entries: {entries|length}</p>
+
+            <w-loop items="entries" var="entry">
+                <p style="background-color: {entry.color}">
+                       <w-include file="entry.htpl" />
+                </p>
+            </w-loop>
+        </div>
+    </w-block>
+</w-layout>

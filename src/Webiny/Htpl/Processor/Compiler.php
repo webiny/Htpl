@@ -44,23 +44,23 @@ class Compiler
     public function getCompiledTemplate($templateName)
     {
         // first, let's try to get it from cache
-        $template = false;
+        $layout = false;
         if (!$this->htpl->getForceCompile()) {
-            $template = $this->getFromCache($templateName);
+            $layout = $this->getFromCache($templateName);
         }
 
-        if (!$template) {
+        if (!$layout) {
             // do the compile
-            $template = $this->compileTemplate($templateName);
+            $layout = $this->compileLayout($templateName);
 
             // cache the result
             if (!$this->htpl->getForceCompile()) {
-                $this->htpl->getCache()->write($templateName, $template);
+                $this->htpl->getCache()->write($templateName, serialize($layout));
             }
         }
 
         // create Template instance
-        $template = new Template($this->htpl, $template);
+        $template = new Template($this->htpl, $layout->getSource());
 
         return $template;
     }
@@ -70,7 +70,7 @@ class Compiler
      *
      * @param string $templateName Template that should be retrieved.
      *
-     * @return bool|string Compiled template in form of a string, or bool false if the template is not in cache.
+     * @return bool|Layout Compiled template in form of a string, or bool false if the template is not in cache.
      */
     private function getFromCache($templateName)
     {
@@ -80,19 +80,32 @@ class Compiler
             return false;
         }
 
-        // verify if cache is still fresh
-        $templateModTime = $this->htpl->getTemplateProvider()->createdOn($templateName);
+        /**
+         * @var Layout $layout
+         */
+        $layout = unserialize($cachedTemplate);
 
-        // cache creation/mod time
-        $cacheModTime = $this->htpl->getCache()->createdOn($templateName);
-
-        if ($cacheModTime >= $templateModTime) {
-            return $cachedTemplate;
+        // check when cache was last touched, so we don't need to revalidate all templates
+        $lastTouched = $layout->getLastTouched();
+        if ($lastTouched > (time() - $this->htpl->getOptions()['cacheValidationTTL'])) {
+            return $layout;
         }
 
-        $this->htpl->getCache()->delete($templateName);
+        foreach ($layout->getIncludedFiles() as $tplFile => $tplFileCreatedOn) {
+            // verify if cache is still fresh, for all included templates in this layout
+            if ($lastTouched < $this->htpl->getTemplateProvider()->createdOn($tplFile)) {
+                $this->htpl->getCache()->delete($templateName);
+                return false;
+            }
+        }
 
-        return false;
+        // update last touched
+        $layout->setLastTouched((time() + $this->htpl->getOptions()['cacheValidationTTL']));
+
+        // cache it again
+        $this->htpl->getCache()->write($templateName, serialize($layout));
+
+        return $layout;
     }
 
     /**
@@ -100,13 +113,14 @@ class Compiler
      *
      * @param string $templateName Template name that should be compiled.
      *
-     * @return string Compiled template in form of a string.
+     * @return Layout Compiled template in form of a string.
      * @throws HtplException
      */
-    private function compileTemplate($templateName)
+    private function compileLayout($templateName)
     {
         // before we can do the template compile, we need to solve the template inheritance
-        $template = LayoutTree::getLayout($this->htpl->getTemplateProvider(), $templateName);
+        $layout = LayoutTree::getLayout($this->htpl->getTemplateProvider(), $templateName);
+        $template = $layout->getSource();
 
         // validate that the raw template doesn't contain any PHP code
         if (strpos($template, '<?') !== false) {
@@ -152,7 +166,7 @@ class Compiler
                     if (isset($result['contexts'])) {
                         foreach ($result['contexts'] as $c) {
                             $contextStart .= '<!-- htpl-context-start:' . $c . ' -->' . "\n";
-                            $contextEnd = '<!-- htpl-context-end:' . $c . ' -->' . "\n".$contextEnd;
+                            $contextEnd = '<!-- htpl-context-end:' . $c . ' -->' . "\n" . $contextEnd;
                         }
                     }
 
@@ -183,7 +197,13 @@ class Compiler
         // adjust contexts
         $template = $this->adjustContexts($template);
 
-        return $template;
+        // optimize template execution
+        /*$template = preg_replace('/\?>(\s+|)\<\?php/', "\n", $template);*/
+
+        // save the new source
+        $layout->setSource($template);
+
+        return $layout;
     }
 
     /**

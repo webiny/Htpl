@@ -61,7 +61,7 @@ class FilesystemCache implements CacheInterface
         $file = $this->getFullPath($file);
         clearstatcache(true, $file);
         if (file_exists($file)) {
-            return file_get_contents($file);
+            return @file_get_contents($file);
         }
     }
 

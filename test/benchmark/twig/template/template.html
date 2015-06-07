@@ -1,0 +1,15 @@
+{% extends "master.html" %}
+
+{% block centerContent %}
+    <div>
+
+        <p>Total entries: {{entries|length}}</p>
+
+        {% for entry in entries %}
+            <p style="background-color: {{entry.color}}">
+                {% include 'entry.html' %}
+            </p>
+        {% endfor %}
+
+    </div>
+{% endblock %}

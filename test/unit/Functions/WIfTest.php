@@ -1,4 +1,9 @@
 <?php
+/**
+ * Webiny Htpl (https://github.com/Webiny/Htpl/)
+ *
+ * @copyright Copyright Webiny LTD
+ */
 namespace Webiny\Htpl\UnitTests\Functions;
 
 class WIfTest extends \PHPUnit_Framework_TestCase
@@ -51,6 +56,7 @@ class WIfTest extends \PHPUnit_Framework_TestCase
         $htpl = new \Webiny\Htpl\Htpl($provider);
 
         $result = $htpl->build('test')->getSource();
+
         $this->assertSame($expectedResult.'<?php } ?>', $result);
     }
 
