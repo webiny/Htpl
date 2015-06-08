@@ -3,7 +3,7 @@ HTPL
 
 HTPL is a PHP template engine that uses HTML5 tags. Here is a simple example:
 
-```html5
+```html
 <ul>
     <w-loop items="entries" var="v" key="k">
         <w-if cond="k=='name' || k=='id'">
@@ -13,7 +13,7 @@ HTPL is a PHP template engine that uses HTML5 tags. Here is a simple example:
 </ul>
 ```
 
-We wrote this template engine because we had a need for an engine that lite and extendible when it comes to file storage.
+We wrote this template engine because we had a need for an engine that is lite and extendible when it comes to file storage.
 For example we want to be able to retrieve the source templates from a cloud storage and write compiled templates into memcache for faster execution.
 Another reason was that we wanted something that is very easy for designers to learn and to use.
  
@@ -43,8 +43,8 @@ There are a couple of built in template providers and cache providers. If you wi
  and implement `\Webiny\Htpl\TemplateProviders\TemplateProviderInterface` for a template provider, or `\Webiny\Htpl\Cache\CacheInterface` for the cache.
 
 See more:
-- [Functions](#functions)
 - [Variables and modifiers](#variables-and-modifiers)
+- [Functions](#functions)
 - [Template inheritance](#template-inheritance)
 - [License and Contributions](#license-and-contributions)
 - [Resources](#resources)
@@ -52,14 +52,14 @@ See more:
  
 ## Variables and modifiers
 
-The variable values are printed using `{varName}` syntax. To the variable, you can attach different modifiers, for example:
+The variable values are printed using `{varName}` syntax. You can also attach different modifiers to variables, for example:
 
 ```
 {someVar|lower|replace({"john":"doe", "bird":"fish:})}
 ```
 
 The upper code takes the value of `someVar` variable, makes it lowercase and replaces the word `john` with `doe`, and 
-the work `bird` with `fish`.
+the word `bird` with `fish`.
 
 As you can see, the modifiers are very easy to apply, and they can be chained together.
 
@@ -76,13 +76,13 @@ The following modifiers are built in:
 - [Capitalize](#capitalize)
 - [Lower](#lower)
 - [Upper](#upper)
-- [First upper](#fist-upper)
+- [First upper](#first-upper)
 - [Format](#format)
 - [Length](#length)
 - [Nl2br](#nl2br)
 - [Raw](#raw)
 - [Replace](#replace)
-- [Strip tags](#script-tags)
+- [Strip tags](#strip-tags)
 - [Trim](#trim)
 
 // array
@@ -99,7 +99,7 @@ The following modifiers are built in:
 - [Time ago](#time-ago)
 
 // other
-- [Default](#default)
+- [Default](#default-value)
 
 See also [building a custom modifier](#custom-modifiers).
 
@@ -124,6 +124,20 @@ Round the number.
 {someNum|round(2, "down")} // 3.549
 ```
 
+The round modifier takes the `precision` point as the first parameter, and `mode` as the second parameter.
+The available `mode` values are: `up` or `down` and they define if the modifier should round-up or round-down.
+
+#### Number format
+
+Format the given number.
+
+`num = 3500.1`
+```
+{num|numberFormat(2)} // 3,500.10
+{num|numberFormat(3, ",", ".")} // 3.500,100
+```
+
+The modifier takes three parameters: `decimals`, `decimal point` and `thousand separator`.
 
 
 #### Capitalize
@@ -141,7 +155,7 @@ String to lowercase.
 
 `str = "SOME STRING"`
 ```
-{str|capitalize} // some string
+{str|lower} // some string
 ```
 
 #### Upper
@@ -150,7 +164,7 @@ String to uppercase.
 
 `str = "some string"`
 ```
-{str|capitalize} // SOME STRING 
+{str|upper} // SOME STRING 
 ```
 
 #### First upper
@@ -162,46 +176,87 @@ First letter to upper case.
 {str|firstUpper} // Some string
 ```
 
-#### Date
-
-Display the date.
-
-`date = "2015-01-01 14:25"`
-```
-{date|date("F j, Y, g:i a")} // January 1, 2015, 2:25 pm
-```
-
-The `date` modifier uses PHP date internally, meaning you can pass any PHP date format and it will parse it.
- 
-#### Time ago
-
-This a handy modifier for displaying the date/time in a `time ago` format.
-
-`date = "2015-01-01 14:25"`
-```
-{date|timeAgo} // 4 months ago
-```
-
-#### Default value
-
-Return a default value, of the variable is empty.
-
-`var` is not defined.
-```
-{var|default("some value")} // some value
-```
-
-
 #### Format
 
-Format a string and replace the placeholders with given values.
+Format a string by replacing the placeholders with given values.
 
 `var = "My name is %s"`
 ```
 {var|format({"John Snow"})} // My name is John Snow
 ```
 
-The modifier takes an array of strings that should be replace in the same order as the placeholders appear in the input string.
+The modifier takes an array of strings that should be replaced in the same order as the placeholders appear in the input string.
+
+#### Length
+
+Returns the string length or the number or elements inside an array.
+
+`arr = ["one", "two", "three"]`
+```
+{arr|length} // 3 
+```
+
+`str = "some string"`
+```
+{str|length} // 11 
+```
+
+#### Nl2br
+
+Converts new lines to HTML `br` tag.
+
+`str = "Some\nString"`
+```
+{str|nl2br} // Some<br />\nString
+```
+
+#### Raw
+
+Un-escapes the variable output.
+
+`var = "<div><p>string</p></div>"`
+```
+{var} // &lt;div&gt;&lt;p&gt;string&lt;/p&gt;&lt;/div&gt;
+{var|raw} // <div><p>string</p></div>
+```
+
+#### Replace
+
+Perform a find and replace on the given string.
+
+`var = "John loves Kalisi"`
+```
+{var|replace({"Kalisi":"Tyrion"})} // John loves Tyrion
+```
+
+The modifier takes an array of key=>value pairs defining what should be replaced.
+
+#### Strip tags
+
+Strips the HTML tags from the string.
+
+`var = "Some <div>HTML</div> string"`
+```
+{var|stripTags} // Some HTML string
+{var|stripTags("<div>")} // Some <div>HTML</div> string
+```
+
+The modifier take a comma separated list of allowed tags that shouldn't be replaced.
+
+
+#### Trim
+
+Trims the given character from the beginning, end or from both sides of the string.
+
+`str = "|Some string|"`
+```
+{str|trim("|")} // Some string
+{str|trim("|", "left")} // Some string|
+{str|trim("|", "right")} // |Some string
+```
+
+The modifier takes the char that should be trimmed as the first parameter, and the trim direction as the second parameter.
+
 
 #### First
 
@@ -236,32 +291,18 @@ The modifier takes the glue as the parameter.
 
 Return the array keys.
 
-`arr = ["keyOne"=>"one", "keyTwo"=>"two", "keyThree"=>"three]`
+`arr = ["keyOne"=>"one", "keyTwo"=>"two", "keyThree"=>"three"]`
 ```
 {arr|keys} // ["keyOne", "keyTwo", "keyThree"]
 ```
 
 #### Values
 
-Return the array keys.
+Return the array values.
 
-`arr = ["keyOne"=>"one", "keyTwo"=>"two", "keyThree"=>"three]`
+`arr = ["keyOne"=>"one", "keyTwo"=>"two", "keyThree"=>"three"]`
 ```
 {arr|values} // ["one", "two", "three"]
-```
-
-#### Length
-
-Returns the string length or the number or elements inside an array.
-
-`arr = ["one", "two", "three"]`
-```
-{arr|length} // 3 
-```
-
-`str = "some string"`
-```
-{str|length} // 11 
 ```
 
 #### Json encode
@@ -273,79 +314,40 @@ Json encode the given array.
 {arr|jsonEncode} // {"one", "two", "three"} 
 ```
 
-#### Nl2br
+#### Date
 
-Converts new lines to HTML `br` tag.
+Display the date.
 
-`str = "Some\nString"`
+`date = "2015-01-01 14:25"`
 ```
-{str|nl2br} // Some<br />\nString
-```
-
-#### Number format
-
-Format the given number.
-
-`num = 3500.1`
-```
-{num|numberFormat(2)} // 3,500.10
-{num|numberFormat(3, ",", ".")} // 3.500,100
+{date|date("F j, Y, g:i a")} // January 1, 2015, 2:25 pm
 ```
 
-The modifier takes three parameters: `decimals`, `decimal point` and `thousand separator`.
+The `date` modifier uses PHP date internally, meaning you can pass any PHP date format and it will parse it.
+ 
+#### Time ago
 
-#### Raw
+This is a helper modifier for displaying the date/time in a `time ago` format.
 
-Un-escapes the variable output.
-
-`var = "<div><p>string</p></div>"`
+`date = "2015-01-01 14:25"`
 ```
-{var} // &lt;div&gt;&lt;p&gt;string&lt;/p&gt;&lt;/div&gt;
-{var|raw} // <div><p>string</p></div>
-```
-
-#### Replace
-
-Perform a find and replace on the given string.
-
-`var = "John loves Kalisi"`
-```
-{var|replace({"Kalisi":"Tyrion"})} // John loves Tyrion
+{date|timeAgo} // 4 months ago
 ```
 
-The modifier takes an array of key=>value pairs defining what should be replaced.
+#### Default value
 
+Return a default value if the variable is empty.
 
-##### Strip tags
-
-Strips the HTML tags from the string.
-
-`var = "Some <div>HTML</div> string"`
+`var` is not defined.
 ```
-{var|stripTags} // Some HTML string
-{var|stripTags("<div>")} // Some <div>HTML</div> string
+{var|default("some value")} // some value
 ```
 
-The modifier take a comma separated list of allowed tags that shouldn't be replaced.
-
-
-#### Trim
-
-Trims the given character from the beginning, end or from both sides of the string.
-
-`str = "|Some string|"`
-```
-{str|trim("|")} // Some string
-{str|trim("|", "left")} // Some string|
-{str|trim("|", "right")} // |Some string
-```
-
-The modifier takes the char that should be trimmed as the first parameter, and the trim direction as the second parameter.
 
 
 #### Custom modifiers
 
-To add a custom modifier, create a class the implements `\Webiny\Htpl\Modifiers\ModifierPackInterface` and assign the class
+To add a custom modifier, create a class that implements `\Webiny\Htpl\Modifiers\ModifierPackInterface` and assign the class
 instance to your Htpl instance:
 
 ```php
@@ -356,7 +358,7 @@ $htpl->registerModifierPack($myModifierPack);
 It's worth checking out the built-in [CorePack](src/Webiny/Htpl/Modifiers/CorePack.php) to get a sense of the implementation. 
 
 
-## Functions (tags)
+## Functions
 
 The template engine provides just a few core functions that are sufficient in about 95% of your needs. 
 For the remaining 5%, HTPL provides a simple way to integrate any custom function.
@@ -366,7 +368,7 @@ Lets take a look at what is supported.
 ### If, Else, ElseIf
 
 The `if` function, and its siblings `else` and `elseif` provide a way for executing/showing a particular part of the template,
-based on the value of the logical condition.
+based on if the logical condition is met.
 
 ```html
 <w-if cond="someVar=='someString'">
@@ -380,7 +382,7 @@ based on the value of the logical condition.
 
 ### Include a template
 
-An external template can we included using the `w-include` tag. 
+An external template can be included using the `w-include` tag. 
 
 ```html
 <ul>
@@ -424,7 +426,7 @@ your JavaScript code, so that the template engine doesn't raise an error.
 
 ### Minify
 
-This is handy function that minifies and concatenates all marked JavaScript, or CSS, files into one file and strips out
+This is a handy function that minifies and concatenates all marked JavaScript, or CSS, files into one file and strips out
 comments and new lines, making the file much faster to download.
 
 A sample template like this: 
@@ -468,7 +470,8 @@ $htpl->setOptions([
     'minify' => [
         'driver'    => 'Webiny\Htpl\Functions\WMinify\WMinify',
         'provider'  => $providerInstance,
-        'cache'     => $cacheInstance
+        'cache'     => $cacheInstance,
+        'webRoot'   => '/minified/'
     ]
 ]);
 ```
@@ -481,6 +484,9 @@ This `provider` tells to the minify where to look for source files.
 
 The `cache` parameter is an instance of a cache, which can also be a different instance then the one used for Htpl instance.
 The `cache` tells to the minify where to save the minified files. 
+
+When a minified file is created, it will be stored somewhere by the cache provider. In order to point to that directory using a web url,
+  the minify component needs to know what is the web absolute path to that location, that path is set inside the `webRoot` option.
 
 ## Template inheritance
 
@@ -523,12 +529,13 @@ The output:
 </html>
 ```
 
-**Note**: inside `w-layout` tag, all content that is note inside a `w-block` tag will get dropped. 
+**Note**: inside `w-layout` tag, all content that is not inside a `w-block` tag will get dropped. 
 
 
 ## License and Contributions
 
 Contributing > Feel free to send PRs.
+
 License > [MIT](LICENSE)
 
 ## Resources
