@@ -3,7 +3,7 @@ HTPL
 
 HTPL is a PHP template engine that uses HTML5 tags. Here is a simple example:
 
-```html
+```html5
 <ul>
     <w-loop items="entries" var="v" key="k">
         <w-if cond="k=='name' || k=='id'">
@@ -13,9 +13,9 @@ HTPL is a PHP template engine that uses HTML5 tags. Here is a simple example:
 </ul>
 ```
 
-We wrote this template engine because we had a need for an engine that can be easily plugged-in to, for example, 
-to retrieve the source templates from a cloud storage and write compiled (cache) templates into memcache for faster execution,
-and that at the same time it doesn't scare off designers, with all the weird symbols and annotations.
+We wrote this template engine because we had a need for an engine that lite and extendible when it comes to file storage.
+For example we want to be able to retrieve the source templates from a cloud storage and write compiled templates into memcache for faster execution.
+Another reason was that we wanted something that is very easy for designers to learn and to use.
  
 ## Main features
 
