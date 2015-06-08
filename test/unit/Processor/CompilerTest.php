@@ -24,4 +24,18 @@ class CompilerTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame('<?php echo htmlspecialchars($this->getVar(\'var\', $this->vars), ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\');?>', trim($result->getSource()));
     }
+
+    public function testGetCompiledTemplateLiteral()
+    {
+        $provider = new ArrayProvider(['test.htpl' => '<w-literal>{var}</w-literal>']);
+        $htpl = new Htpl($provider);
+
+        $compiler = new Compiler($htpl);
+        $result = $compiler->getCompiledTemplate('test.htpl');
+
+        $this->assertInstanceOf('Webiny\Htpl\Processor\Template', $result);
+
+        $this->assertSame('{var}', trim($result->getSource()));
+    }
+
 }

@@ -127,6 +127,15 @@ class Compiler
             throw new HtplException(sprintf('Template "%s" contains PHP tags which are not allowed.', $templateName));
         }
 
+        // strip out w-literal content before parsing any tags or variables
+        $literals = TagLexer::parse($template)->select('w-literal');
+        $literalReplacements = [];
+        foreach ($literals as $l) {
+            $id = '<!-- htpl: w-literal => ' . uniqid() . ' -->';
+            $literalReplacements[$id] = $l['content'];
+            $template = str_replace($l['outerHtml'], $id, $template);
+        }
+
         // parse the variables
         $template = VarLexer::parse($template, $this->htpl);
 
@@ -199,6 +208,11 @@ class Compiler
 
         // optimize template execution
         /*$template = preg_replace('/\?>(\s+|)\<\?php/', "\n", $template);*/
+
+        // put back the literals
+        foreach ($literalReplacements as $lrId => $lrVal) {
+            $template = str_replace($lrId, $lrVal, $template);
+        }
 
         // save the new source
         $layout->setSource($template);
