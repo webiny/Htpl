@@ -13,13 +13,13 @@ HTPL is a PHP template engine that uses HTML5 tags. Here is a simple example:
 </ul>
 ```
 
-We wrote this template engine because we had a need for an engine that is lite and extendible when it comes to file storage.
-For example we want to be able to retrieve the source templates from a cloud storage and write compiled templates into memcache for faster execution.
+We wrote this template engine because we had a need for an engine that is light and extensible when it comes to file storage.
+For example, we want to be able to retrieve the source templates from a cloud storage and write compiled templates into memcache for faster execution.
 Another reason was that we wanted something that is very easy for designers to learn and to use.
  
 ## Main features
 
-1. It's secure, all values are automatically escaped before the output
+1. It's secure, all values are automatically escaped before output
 2. Supports layout inheritance
 3. Easy to extend, no need to write any lexers
 4. Very fast (in some cases it outperforms Smarty, Twig and Blade) 
@@ -27,8 +27,8 @@ Another reason was that we wanted something that is very easy for designers to l
 
 # The Basics
 
-The engine uses an instance of a `TemplateProvider` to retrieve the source template, and it uses a `Cache` instance
-to store the compiled template, for faster execution.
+The engine uses an instance of `TemplateProvider` to retrieve the source template, and it uses a `Cache` instance
+to store the compiled template for faster execution.
 
 ```php
 $provider = new \Webiny\Htpl\TemplateProviders\FilesystemProvider([__DIR__ . '/template']);
@@ -52,13 +52,13 @@ See more:
  
 ## Variables and modifiers
 
-The variable values are printed using `{varName}` syntax. You can also attach different modifiers to variables, for example:
+Variable values are printed using `{varName}` syntax. You can also attach different modifiers to variables, for example:
 
 ```
 {someVar|lower|replace({"john":"doe", "bird":"fish:})}
 ```
 
-The upper code takes the value of `someVar` variable, makes it lowercase and replaces the word `john` with `doe`, and 
+The above code takes the value of `someVar`, makes it lowercase and replaces the word `john` with `doe`, and 
 the word `bird` with `fish`.
 
 As you can see, the modifiers are very easy to apply, and they can be chained together.
@@ -67,12 +67,14 @@ As you can see, the modifiers are very easy to apply, and they can be chained to
 
 The following modifiers are built in:
 
-// numbers
+#### numbers
+
 - [Abs](#abs)
 - [Round](#round)
 - [Number format](#number-format)
 
-// strings
+#### strings
+
 - [Capitalize](#capitalize)
 - [Lower](#lower)
 - [Upper](#upper)
@@ -85,7 +87,8 @@ The following modifiers are built in:
 - [Strip tags](#strip-tags)
 - [Trim](#trim)
 
-// array
+#### array
+
 - [First](#first)
 - [Last](#last)
 - [Join](#join)
@@ -94,11 +97,12 @@ The following modifiers are built in:
 - [Length](#length)
 - [Json encode](#json-encode)
 
-// date
+#### date / time
 - [Date](#date)
 - [Time ago](#time-ago)
 
-// other
+#### other
+
 - [Default](#default-value)
 
 See also [building a custom modifier](#custom-modifiers).
@@ -125,7 +129,7 @@ Round the number.
 ```
 
 The round modifier takes the `precision` point as the first parameter, and `mode` as the second parameter.
-The available `mode` values are: `up` or `down` and they define if the modifier should round-up or round-down.
+The available `mode` values are: `up` or `down` and they define if the modifier should round up or round down.
 
 #### Number format
 
@@ -137,7 +141,7 @@ Format the given number.
 {num|numberFormat(3, ",", ".")} // 3.500,100
 ```
 
-The modifier takes three parameters: `decimals`, `decimal point` and `thousand separator`.
+The modifier takes three parameters: `decimals`, `decimal point` and `thousands separator`.
 
 
 #### Capitalize
@@ -203,7 +207,7 @@ Returns the string length or the number or elements inside an array.
 
 #### Nl2br
 
-Converts new lines to HTML `br` tag.
+Converts new lines to HTML's `br` tag.
 
 `str = "Some\nString"`
 ```
@@ -224,9 +228,9 @@ Un-escapes the variable output.
 
 Perform a find and replace on the given string.
 
-`var = "John loves Kalisi"`
+`var = "John loves Khaleesi"`
 ```
-{var|replace({"Kalisi":"Tyrion"})} // John loves Tyrion
+{var|replace({"Khaleesi":"Tyrion"})} // John loves Tyrion
 ```
 
 The modifier takes an array of key=>value pairs defining what should be replaced.
@@ -241,7 +245,7 @@ Strips the HTML tags from the string.
 {var|stripTags("<div>")} // Some <div>HTML</div> string
 ```
 
-The modifier take a comma separated list of allowed tags that shouldn't be replaced.
+The modifier takes a comma separated list of allowed tags that shouldn't be replaced.
 
 
 #### Trim
@@ -263,6 +267,7 @@ The modifier takes the char that should be trimmed as the first parameter, and t
 Return the first value from the array.
 
 `arr = ["one", "two", "three"]`
+
 ```
 {arr|first} // one
 ```
@@ -272,6 +277,7 @@ Return the first value from the array.
 Return the last value from the array.
 
 `arr = ["one", "two", "three"]`
+
 ```
 {arr|last} // three
 ```
@@ -367,8 +373,8 @@ Lets take a look at what is supported.
 
 ### If, Else, ElseIf
 
-The `if` function, and its siblings `else` and `elseif` provide a way for executing/showing a particular part of the template,
-based on if the logical condition is met.
+The `if` function, and its siblings `else` and `elseif`, provide a way for executing/showing a particular part of the template,
+based on whether or not the logical condition is met.
 
 ```html
 <w-if cond="someVar=='someString'">
@@ -390,7 +396,7 @@ An external template can be included using the `w-include` tag.
 </ul>
 ```
 
-If the value of the `file` attribute doesn't have a `.htpl` extension, it will be read as a variable, and the engine will
+If the value of the `file` attribute doesn't have an `.htpl` extension, it will be read as a variable, and the engine will
 try to retrieve the template name from the variable and include it. 
 **Note:** Only `.htpl` files can be included. The `.htpl` files cannot contain any PHP code.
 
@@ -402,8 +408,8 @@ try to retrieve the template name from the variable and include it.
 
 ### Loops
 
-The loop parameter takes the `items` attribute, which is the object you wish to loop, and the `var` attribute, which 
-marks the current object value inside the loop. Also an optional attribute `key` can be passed, that holds the object key value.
+The loop parameter takes the `items` attribute, which is the object you wish to loop through, and the `var` attribute, which 
+marks the current object value inside the loop. Also an optional attribute `key` can be passed, that holds the object's key value.
 
 ```html
 <w-loop items="entries" var="v" key="k">
@@ -413,7 +419,7 @@ marks the current object value inside the loop. Also an optional attribute `key`
 
 ### Literal
 
-The `w-literal` tag marks the content that should not be parsed. This is useful when you are using curly brackets `{}` inside
+The `w-literal` tag marks the content that should not be parsed. This is useful when you are using curly braces `{}` inside
 your JavaScript code, so that the template engine doesn't raise an error.
 
 ```html
@@ -426,7 +432,7 @@ your JavaScript code, so that the template engine doesn't raise an error.
 
 ### Minify
 
-This is a handy function that minifies and concatenates all marked JavaScript, or CSS, files into one file and strips out
+This is a handy function that minifies and concatenates all marked JavaScript or CSS files into one file and strips out
 comments and new lines, making the file much faster to download.
 
 A sample template like this: 
@@ -455,11 +461,9 @@ The script automatically tracks when the file was changed and creates a new mini
 so it's automatically refreshed in the user's browser.
 **Note:** Don't place js and css files together inside the same `w-minify` block.
 
-###
-
 #### Configuring minify
 
-The minify function needs to be configured, before it can be used. 
+The minify function needs to be configured before it can be used. 
 
 ```php
 // get your Htpl instance
@@ -476,17 +480,17 @@ $htpl->setOptions([
 ]);
 ```
 
-The `driver` parameter is an optional parameter. If not defined, if will use the internal minifaction class. In case you
-wish to use some other minifcation class, you can create your own driver by extending `\Webiny\Htpl\Functions\WMinify\WMinifyAbstract`.
+The `driver` parameter is an optional parameter. If not defined, it will use the internal minification class. In case you
+wish to use some other minification class, you can create your own driver by extending `\Webiny\Htpl\Functions\WMinify\WMinifyAbstract`.
 
-The `provider` parameter is an instance of a template provider, which can be a different instance, then the one used for Htpl instance.
-This `provider` tells to the minify where to look for source files.
+The `provider` parameter is an instance of a template provider, which can be a different instance from the one used for the Htpl instance.
+This `provider` tells the minifier where to look for source files.
 
-The `cache` parameter is an instance of a cache, which can also be a different instance then the one used for Htpl instance.
-The `cache` tells to the minify where to save the minified files. 
+The `cache` parameter is an instance of a cache, which can also be a different instance than the one used for Htpl instance.
+The `cache` tells the minifier where to save the minified files. 
 
-When a minified file is created, it will be stored somewhere by the cache provider. In order to point to that directory using a web url,
-  the minify component needs to know what is the web absolute path to that location, that path is set inside the `webRoot` option.
+When a minified file is created, it will be stored somewhere by the cache provider. In order to point to that directory using a web URL,
+  the minify component needs to know the web absolute path to that location. That path is set inside the `webRoot` option.
 
 ## Template inheritance
 
@@ -529,7 +533,7 @@ The output:
 </html>
 ```
 
-**Note**: inside `w-layout` tag, all content that is not inside a `w-block` tag will get dropped. 
+**Note**: inside the `w-layout` tag, all content that is not inside a `w-block` tag will get dropped. 
 
 
 ## License and Contributions
