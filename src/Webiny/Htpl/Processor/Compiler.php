@@ -188,6 +188,12 @@ class Compiler
                         $template = preg_replace('/(\s+|)' . preg_quote($currentMatch['outerHtml'], '/') . '(\s+|)/',
                             $replacement, $template);
                     } else {
+                        $replacement = $contextStart . $result['openingTag'] . $currentMatch['content'] . $result['closingTag'] . $contextEnd;
+
+                        $template = preg_replace('/(\s+|)' . preg_quote($currentMatch['outerHtml'], '/') . '(\s+|)/',
+                            $replacement, $template);
+
+                        /*
                         //$template = str_replace($openingTag, $result['openingTag'], $template);
                         $template = preg_replace('/(\s+|)' . preg_quote($openingTag, '/') . '(\s+|)/',
                             $result['openingTag'], $template);
@@ -196,6 +202,7 @@ class Compiler
                             $template = preg_replace('/(\s+|)' . preg_quote($closingTag, '/') . '(\s+|)/',
                                 $result['closingTag'], $template);
                         }
+                        */
                     }
                 } catch (HtplException $e) {
                     throw new HtplException('Htpl in unable to parse your template near: ' . $openingTag . "\n\n " . $e->getMessage());

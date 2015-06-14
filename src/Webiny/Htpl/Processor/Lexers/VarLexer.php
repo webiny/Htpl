@@ -68,16 +68,23 @@ class VarLexer extends AbstractLexer
      */
     private $htpl;
 
+    /**
+     * @var bool Should the variable be outputted (echoed)
+     */
+    private $ouputVar = true;
+
 
     /**
      * Parses the given input
      *
      * @param string $input
+     * @param Htpl   $htpl
+     * @param bool   $outputVar
      *
      * @return string Parse result.
      * @throws HtplException
      */
-    static public function parse($input, Htpl $htpl)
+    static public function parse($input, Htpl $htpl, $outputVar = true)
     {
         // break template into lines
         $lines = explode("\n", $input);
@@ -85,7 +92,7 @@ class VarLexer extends AbstractLexer
         foreach ($lines as $l => $line) {
             try {
                 $instance = new self($line, $htpl);
-                $lines[$l] = $instance->getOutput();
+                $lines[$l] = $instance->getOutput($outputVar);
             } catch (HtplException $e) {
                 throw new HtplException(sprintf('Unable to parse the template at line %s. ', $l) . $e->getMessage());
             }
@@ -106,13 +113,17 @@ class VarLexer extends AbstractLexer
     /**
      * Returns the result of parsing the input.
      *
+     * @param bool $outputVar
+     *
      * @return string
      * @throws HtplException
      */
-    public function getOutput()
+    public function getOutput($outputVar = true)
     {
         // get lexer flags from Htpl options
         $lexerVarFlags = $this->htpl->getLexerFlags();
+
+        $this->ouputVar = $outputVar;
 
         // check if we need to parse the string at all
         if (strpos($this->input, $lexerVarFlags['varStartFlag']) === false || strpos($this->input,
@@ -151,7 +162,11 @@ class VarLexer extends AbstractLexer
                     array_pop($this->parts);
 
                     // parse variable (variable name + attached modifiers)
-                    $input = str_replace($entryString, OutputWrapper::outputVar($this->lexVariables()), $input);
+                    if ($this->ouputVar) {
+                        $input = str_replace($entryString, OutputWrapper::outputVar($this->lexVariables()), $input);
+                    } else {
+                        $input = str_replace($entryString, $this->lexVariables(), $input);
+                    }
 
                     // reset the arrays
                     $this->parts = [];

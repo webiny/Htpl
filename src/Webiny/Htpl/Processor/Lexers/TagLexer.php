@@ -291,16 +291,23 @@ class TagLexer extends AbstractLexer
             throw new HtplException(sprintf('Missing a closing tag for %s block.', $tagName));
         }
 
+        $nestedCounter = 0;
         $content = '';
         while ($this->countParts() > 0) {
             $value = $this->currentValue();
             // check if it's the tag end for the current tag
+            // note: can be the same tag, we have to have a counter
             if ($this->currentToken() == self::TAG_END || $this->currentToken() == self::TAG_SELF_CLOSE) {
                 $this->moveCursor();
 
                 if ($value . $this->currentValue() == '</' . $tagName) {
-                    $this->moveCursor();
-                    break;
+                    if ($nestedCounter === 0) {
+                        $this->moveCursor();
+                        break;
+                    } else {
+                        $content .= $value . $this->currentValue();
+                        $nestedCounter--;
+                    }
                 } else {
                     $content .= $value . $this->currentValue();
                 }
@@ -311,6 +318,9 @@ class TagLexer extends AbstractLexer
                 if ($tag) {
                     $this->tags[] = $tag;
                     $content .= $tag['outerHtml'];
+                    if ($tag['name'] == $tagName) {
+                        $nestedCounter++;
+                    }
                 } else {
                     do {
                         $this->prevCursor();
@@ -321,6 +331,7 @@ class TagLexer extends AbstractLexer
             } else {
                 $content .= $value;
             }
+
             $this->moveCursor();
         }
 

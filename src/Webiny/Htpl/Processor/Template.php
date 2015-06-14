@@ -51,17 +51,34 @@ class Template
             $keyData = explode('.', $key);
             $value = $context;
             foreach ($keyData as $kd) {
-                if (!empty($value[$kd])) {
+                if(is_array($value) && is_object($value[$kd])){
                     $value = $value[$kd];
-                } else {
-                    return null;
+                    continue;
+                }else{
+                    if(is_array($value) && !empty($value[$kd])){
+                        $value = $value[$kd];
+                        continue;
+                    }else if(is_object($value)){
+                        if(!empty($value->$kd)){
+                            $value = $value->$kd;
+                            continue;
+                        }else{
+                            if(method_exists($value, 'get'.$kd)){
+                                $method ='get'.$kd;
+                                $value = $value->$method();
+                                continue;
+                            }
+                            // else null
+                            return null;
+                        }
+                    }else{
+                        return null;
+                    }
                 }
             }
-
-            return $value;
-        }else{
-            return null;
         }
+
+        return $value;
     }
 
     /**

@@ -8,6 +8,8 @@ namespace Webiny\Htpl\Functions;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
+use Webiny\Htpl\Processor\Lexers\TagLexer;
+use Webiny\Htpl\Processor\Lexers\VarLexer;
 use Webiny\Htpl\Processor\OutputWrapper;
 
 /**
@@ -47,7 +49,7 @@ class WIf implements FunctionInterface
             throw new HtplException('w-if must have a logical condition.');
         }
 
-        $conditions = $this->parseConditions($attributes['cond']);
+        $conditions = $this->parseConditions($attributes['cond'], $htpl);
         $openingTag = 'if (' . $conditions . ') {';
 
         return [
@@ -63,7 +65,7 @@ class WIf implements FunctionInterface
      *
      * @return string
      */
-    protected function parseConditions($conditions)
+    protected function parseConditions($conditions, $htpl)
     {
         // extract the strings
         preg_match_all('/([\'])([A-z]?[A-z\.0-9]+)\1/', $conditions, $matches, PREG_OFFSET_CAPTURE);
@@ -89,7 +91,7 @@ class WIf implements FunctionInterface
         $protectedVarNames = ['false', 'true', 'null'];
 
         // extract the variables
-        preg_match_all('/([A-z][\w\.]+|[A-z]+)/', $conditions, $matches, PREG_OFFSET_CAPTURE);
+        preg_match_all('/([A-z][\w\.|]+|[A-z]+)/', $conditions, $matches, PREG_OFFSET_CAPTURE);
 
         if (count($matches[0]) > 0) {
             $countOffset = 0;
@@ -98,7 +100,7 @@ class WIf implements FunctionInterface
                     if (isset($vars[$m[0]])) {
                         $var = $vars[$m[0]];
                     } else {
-                        $var = OutputWrapper::getVar($m[0]);
+                        $var = VarLexer::parse('{'.$m[0].'}', $htpl, false);
                     }
 
                     $conditions = substr_replace($conditions, $var, $m[1] + $countOffset, strlen($m[0]));
