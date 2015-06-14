@@ -8,7 +8,6 @@ namespace Webiny\Htpl\Functions;
 
 use Webiny\Htpl\Htpl;
 use Webiny\Htpl\HtplException;
-use Webiny\Htpl\Processor\Lexers\TagLexer;
 use Webiny\Htpl\Processor\Lexers\VarLexer;
 use Webiny\Htpl\Processor\OutputWrapper;
 

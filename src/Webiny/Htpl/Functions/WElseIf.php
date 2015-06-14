@@ -47,7 +47,7 @@ class WElseIf extends WIf
             throw new HtplException('w-elseif must have a logical condition.');
         }
 
-        $conditions = $this->parseConditions($attributes['cond']);
+        $conditions = $this->parseConditions($attributes['cond'], $htpl);
         $openingTag = '} elseif (' . $conditions . ') {';
 
         return [
