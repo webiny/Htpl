@@ -65,13 +65,13 @@ class WIfTest extends \PHPUnit_Framework_TestCase
         return[
             ["1>2", '<?php if (1>2) { ?>'],
             ["'a'!='b'", '<?php if (\'a\'!=\'b\') { ?>'],
-            ["var=='test'", '<?php if ('.\Webiny\Htpl\Processor\OutputWrapper::getVar('var').'==\'test\') { ?>'],
-            ["a!='b'", '<?php if ('.\Webiny\Htpl\Processor\OutputWrapper::getVar('a').'!=\'b\') { ?>'],
-            ["a!=b", '<?php if ('.\Webiny\Htpl\Processor\OutputWrapper::getVar('a').'!='.\Webiny\Htpl\Processor\OutputWrapper::getVar('b').') { ?>'],
-            ["someVar>'10'", '<?php if ('.\Webiny\Htpl\Processor\OutputWrapper::getVar('someVar').'>\'10\') { ?>'],
-            ["someVar>10", '<?php if ('.\Webiny\Htpl\Processor\OutputWrapper::getVar('someVar').'>10) { ?>'],
-            ["some.var!='test.var'", '<?php if ('.\Webiny\Htpl\Processor\OutputWrapper::getVar('some.var').'!=\'test.var\') { ?>'],
-            ["var12!='test'", '<?php if ('.\Webiny\Htpl\Processor\OutputWrapper::getVar('var12').'!=\'test\') { ?>'],
+            ["var=='test'", '<?php if (htmlspecialchars($this->getVar(\'var\', $this->vars), ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\')==\'test\') { ?>'],
+            ["a!='b'", '<?php if (htmlspecialchars($this->getVar(\'a\', $this->vars), ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\')!=\'b\') { ?>'],
+            ["a!=b", '<?php if (htmlspecialchars($this->getVar(\'a\', $this->vars), ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\')!=htmlspecialchars($this->getVar(\'b\', $this->vars), ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\')) { ?>'],
+            ["someVar>'10'", '<?php if (htmlspecialchars($this->getVar(\'someVar\', $this->vars), ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\')>\'10\') { ?>'],
+            ["someVar>10", '<?php if (htmlspecialchars($this->getVar(\'someVar\', $this->vars), ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\')>10) { ?>'],
+            ["some.var!='test.var'", '<?php if (htmlspecialchars($this->getVar(\'some.var\', $this->vars), ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\')!=\'test.var\') { ?>'],
+            ["var12!='test'", '<?php if (htmlspecialchars($this->getVar(\'var12\', $this->vars), ENT_QUOTES | ENT_SUBSTITUTE, \'utf-8\')!=\'test\') { ?>'],
         ];
     }
 }
