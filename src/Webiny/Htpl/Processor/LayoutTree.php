@@ -134,7 +134,8 @@ class LayoutTree
 
         $parsedTemplates = 0;
         foreach ($includes as $i) {
-            if (substr($i['attributes']['file'], -5) == '.htpl') {
+            $ext = substr($i['attributes']['file'], -5);
+            if ($ext == '.htpl' || $ext == '.html') {
                 // join the includes with the main template
                 $includedTemplate = $provider->getSource($i['attributes']['file']);
                 $source = preg_replace('/(\s+|)' . preg_quote($i['outerHtml'], '/') . '(\s+|)/', $includedTemplate,

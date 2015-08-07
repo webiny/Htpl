@@ -58,4 +58,25 @@ class LayoutTreeTest extends \PHPUnit_Framework_TestCase
         $result = LayoutTree::getLayout($provider, 'test.htpl');
         $this->assertSame('<html><body>{var}Test content</body>', $result->getSource());
     }
+
+    public function testGetLayout4HtmlInclude()
+    {
+        $tpl = '<w-layout template="master.htpl">';
+        $tpl .= '<w-block name="content">';
+        $tpl .= '<w-include file="HTMLInclude.html"/>';
+        $tpl .= 'Test content</w-block>';
+        $tpl .= '</w-layout>';
+
+        $layout = '<html><body><w-block name="content"></w-block></body>';
+        $includedFile = 'This is <div>{var}</div> HTML. ';
+
+        $provider = new ArrayProvider([
+            'test.htpl'         => $tpl,
+            'master.htpl'       => $layout,
+            'HTMLInclude.html' => $includedFile
+        ]);
+
+        $result = LayoutTree::getLayout($provider, 'test.htpl');
+        $this->assertSame('<html><body>This is <div>{var}</div> HTML. Test content</body>', $result->getSource());
+    }
 }
